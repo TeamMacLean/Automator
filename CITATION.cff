@@ -10,6 +10,7 @@ authors:
     orcid: https://orcid.org/0009-0005-9225-1775
 
 version: "3.0.0"
+date-released: "2026-07-26"
 
 license:
   - MIT
@@ -41,6 +42,5 @@ preferred-citation:
       affiliation: The Sainsbury Laboratory, Norwich
       orcid: https://orcid.org/0009-0005-9225-1775
   title: "Automator: Automated Imaging of Round Petri Dishes/Plates (90–100 mm)"
-  year: "2025–2026"
-  institution: The Sainsbury Laboratory, Norwich
+  year: 2026
   url: "https://github.com/rotsl/Automator"
