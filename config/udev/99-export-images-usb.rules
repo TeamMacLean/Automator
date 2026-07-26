@@ -1,0 +1,18 @@
+# Secure Automator image export to USB storage.
+#
+# Trigger only for USB block partitions containing a filesystem.
+# This avoids USB mouse, keyboard, camera, serial devices, and MKS Robin Nano.
+#
+# UDISKS_IGNORE prevents Raspberry Pi desktop / udisks from auto-mounting
+# the USB at /media/pi/... while our systemd service handles the export.
+
+ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", ENV{UDISKS_IGNORE}="1"
+
+# Skip obvious Raspberry Pi boot/root partitions from bootable USB media.
+ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", ENV{ID_FS_LABEL}=="bootfs", GOTO="export_images_usb_end"
+ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", ENV{ID_FS_LABEL}=="rootfs", GOTO="export_images_usb_end"
+
+# Start the export service only for normal USB filesystem partitions.
+ACTION=="add", SUBSYSTEM=="block", ENV{DEVTYPE}=="partition", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", TAG+="systemd", ENV{SYSTEMD_WANTS}+="export-images-to-usb@%k.service"
+
+LABEL="export_images_usb_end"

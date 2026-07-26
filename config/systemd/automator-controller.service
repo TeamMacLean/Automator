@@ -1,0 +1,23 @@
+[Unit]
+Description=Automator Controller
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Automator/dev2
+ExecStart=/home/pi/Automator/venv_clean/bin/python /home/pi/Automator/dev2/maincontroller.py
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=130
+
+# 🔐 Secrets (do NOT commit)
+Environment="AUTOMATOR_ADMIN_PASSWORD=<REDACTED>"
+Environment="AUTOMATOR_SESSION_SECRET=<REDACTED>"
+
+# Safety
+KillSignal=SIGTERM
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,8 @@
+NAME                    UUID                                  TYPE       DEVICE 
+IOT                     e51d7392-116a-4dc6-8333-39fd9c718dbf  wifi       wlan0  
+lo                      3d6085af-d0c2-4176-8c6e-a6a801a9da02  loopback   lo     
+eduroam-NBI             7fea442a-89d8-4ba7-b060-d99059bd811a  wifi       --     
+Instrument connection   c3612a53-4d0a-4587-b00c-6f6eaaef9f04  ethernet   --     
+mac-direct-auto         65c3e7b6-303b-421a-9590-e41b9f1ce6b2  ethernet   --     
+preconfigured           e70013c7-5a59-4385-a157-2e4f6a428f69  wifi       --     
+Rex Network             cdf74d2a-3167-40e8-bdc2-ac706d90ae4c  bluetooth  --     

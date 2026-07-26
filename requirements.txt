@@ -1,0 +1,29 @@
+# Core numerical & imaging
+numpy==1.26.4
+opencv-python==4.10.0.84
+opencv-contrib-python==4.10.0.84
+Pillow==11.3.0
+
+# Web server & realtime UI
+Flask==3.0.3
+flask-wtf==1.2.2
+werkzeug==3.0.3
+Flask-SocketIO==5.5.1
+python-socketio==5.14.2
+eventlet==0.40.3
+
+# HTTP & system interaction
+requests==2.32.4
+python-dotenv==1.0.1
+
+# QR code generation & detection
+qrcode==8.0
+segno==1.6.6
+zxing-cpp==2.2.0
+
+# ONNX inference + model download
+onnxruntime==1.18.0
+huggingface_hub==0.23.4
+
+# PDF generation (QR sheets)
+reportlab==4.2.0

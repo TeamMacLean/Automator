@@ -1,0 +1,2401 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2025–2026 Rohan R -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>Automated Petri-Dish Imaging System</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+<style>
+body { background:#1e1e1e; color:#eee; }
+
+:root {
+  --a11y-font-scale: 1;
+}
+
+html {
+  font-size: calc(16px * var(--a11y-font-scale));
+}
+
+body.a11y-font-normal { --a11y-font-scale: 1; }
+body.a11y-font-large { --a11y-font-scale: 1.125; }
+body.a11y-font-xlarge { --a11y-font-scale: 1.25; }
+
+body.a11y-colorblind {
+  --a11y-cb-text: #111;
+  --a11y-cb-link: #0b4f8a;
+}
+
+body.a11y-colorblind:not(.light-mode) {
+  --a11y-cb-text: #f5f5f5;
+  --a11y-cb-link: #9ecbff;
+}
+
+body.a11y-colorblind {
+  --theme-text: var(--a11y-cb-text) !important;
+  --theme-link: var(--a11y-cb-link) !important;
+  --theme-log-text: var(--a11y-cb-text) !important;
+}
+
+body.a11y-colorblind .text-info,
+body.a11y-colorblind .text-warning,
+body.a11y-colorblind .text-danger,
+body.a11y-colorblind .text-success,
+body.a11y-colorblind .text-primary,
+body.a11y-colorblind .text-secondary,
+body.a11y-colorblind .text-muted,
+body.a11y-colorblind .log-green,
+body.a11y-colorblind .log-orange,
+body.a11y-colorblind .log-red {
+  color: var(--a11y-cb-text) !important;
+}
+
+.a11y-aaa-mark {
+  display:inline-block;
+  font-weight:700;
+  letter-spacing:0.04em;
+  margin-right:0;
+  font-size:0.85em;
+}
+
+.a11y-icon-btn {
+  min-width:2rem;
+  padding:0.2rem 0.35rem;
+  line-height:1;
+  text-align:center;
+}
+
+/* ================= SIDEBAR ================= */
+.sidebar {
+  flex:0 0 25%;
+  max-width:25%;
+  background:#111;
+  border-right:1px solid #333;
+  padding:12px;
+  height:100vh;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:16px;
+}
+
+.fm-header {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  cursor:pointer;
+  color:#ccc;
+  user-select:none;
+}
+.fm-header img { height:22px; }
+
+.preview-images-btn {
+  border:1px solid #6c757d;
+  border-radius:0.4rem;
+  padding:0.35rem 0.6rem;
+  background:rgba(0,0,0,0.08);
+  width:fit-content;
+}
+
+.preview-images-btn:hover {
+  background:rgba(0,0,0,0.14);
+}
+
+.file-tree { display:none; }
+
+/* Explorer style */
+.folder-row {
+  padding:4px 6px;
+  font-size:14px;
+}
+.folder-row a {
+  color:#ddd;
+  text-decoration:none;
+}
+.folder-row a:hover { text-decoration:underline; }
+
+.thumb-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, 90px);
+  gap:10px;
+  margin-top:8px;
+}
+.thumb {
+  text-align:center;
+  font-size:11px;
+}
+.thumb img {
+  width:80px;
+  height:80px;
+  object-fit:cover;
+  border:1px solid #444;
+  border-radius:4px;
+}
+.thumb-name {
+  max-width:80px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* ================= DISK ================= */
+.disk-label {
+  text-align:center;
+  font-size:12px;
+  margin-bottom:4px;
+}
+.disk-bar {
+  height:16px;
+  background:#333;
+  border-radius:8px;
+  overflow:hidden;
+}
+.disk-bar-fill {
+  height:100%;
+  background:#00c853;
+  width:0%;
+}
+
+/* ================= LOG ================= */
+#log-box {
+  background:#0e0e0e;
+  border:1px solid #333;
+  padding:6px;
+  font-size:13px;
+  height:240px;
+  overflow-y:auto;
+}
+.log-line { white-space:pre-wrap; }
+.log-green { color:#0f0; }
+.log-orange { color:#ff9800; }
+.log-red { color:#ff5252; font-weight:bold; }
+
+/* ================= MAIN ================= */
+.main { padding:15px; }
+
+.workflow-arrow {
+  text-align:center;
+  color:#000;
+  font-weight:700;
+  font-size:22px;
+  line-height:1;
+  text-shadow:none;
+}
+
+.workflow-inline-arrow {
+  color:#000;
+}
+
+@keyframes runArrowBlink {
+  0%, 100% { opacity:1; }
+  50% { opacity:0.2; }
+}
+
+.plate-flow-region {
+  position:relative;
+  padding-left:32px;
+}
+
+.plate-step-text-inline {
+  margin-left:-32px;
+}
+
+.plate-flow-arrow {
+  position:absolute;
+  left:10px;
+  top:92px;
+  bottom:18px;
+  width:8px;
+  border-radius:999px;
+  background:linear-gradient(to bottom, #ff5252 0%, #ffc107 55%, #00c853 100%);
+  pointer-events:none;
+}
+
+.plate-flow-arrow::after {
+  content:"";
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:-12px;
+  width:0;
+  height:0;
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-top:12px solid #00c853;
+}
+
+#workspace-img {
+  width:100%;
+  max-width:100%;
+  height:auto;
+  border:6px solid #000;
+  box-shadow:0 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.main {
+  flex:0 0 75%;
+  max-width:75%;
+  min-height:100vh;
+  overflow:visible;
+}
+
+/* ================= PLATES ================= */
+.plate-config-box {
+  background:#f8f9fa;
+  color:#212529;
+  padding:12px;
+  border-radius:8px;
+  margin-bottom:10px;
+}
+
+.include-toggle {
+  width:22px;
+  height:22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  font-weight:700;
+  border:1px solid currentColor;
+  border-radius:4px;
+  cursor:pointer;
+  user-select:none;
+}
+.include-on { color:#00c853; }
+.include-off { color:#ff5252; }
+
+.plate-config-box .form-check-input[type="radio"] {
+  border:2px solid #dc3545;
+  background-color:#fff;
+  box-shadow:none;
+}
+
+.plate-config-box .form-check-input[type="radio"]:checked {
+  border-color:#198754;
+  background-color:#198754;
+}
+
+.run-details-status {
+  border:1px solid #555;
+  border-radius:6px;
+  padding:4px 8px;
+  background:#1a1a1a;
+}
+
+.run-progress-btn {
+  transition: background 0.8s linear, border-color 0.8s linear, color 0.8s linear;
+  border-width:1px;
+}
+
+.preview-generate-btn {
+  width:100%;
+  font-weight:700;
+}
+
+.run-action-arrow {
+  font-size:1.45rem;
+  line-height:1;
+}
+
+.run-action-arrow-blink {
+  color:#dc3545;
+  animation:runArrowBlink 0.9s linear infinite;
+}
+
+.run-action-arrow-ready {
+  color:#198754;
+  animation:none;
+}
+
+.workflow-action-btn {
+  font-weight:700;
+}
+
+/* ================= FOOTER & LOGO ================= */
+#footer {
+  margin:8px 0;
+  width:100%;
+  text-align:center;
+  font-size:12px;
+}
+#footer a {
+  color:#aaa;
+  text-decoration:none;
+}
+#footer a:hover { text-decoration:underline; }
+
+#tsl-logo {
+  display:block;
+  margin:24px 10px 0 auto;
+  height:55px;
+  opacity:0.85;
+  pointer-events:none;
+}
+</style>
+
+<!-- THEME CSS -->
+<style>
+body {
+  background: var(--theme-body-bg, #1e1e1e) !important;
+  color: var(--theme-text, #eee) !important;
+}
+
+body .sidebar {
+  background: var(--theme-sidebar-bg, #111) !important;
+  border-right-color: var(--theme-border, #333) !important;
+}
+
+body .sidebar .bg-dark {
+  background: var(--theme-card-bg, #0e0e0e) !important;
+  border-color: var(--theme-border, #333) !important;
+}
+
+body .sidebar .workflow-box {
+  background: #fff !important;
+  border-color: #000 !important;
+  color: #111 !important;
+}
+
+body .sidebar .workflow-box .border-secondary {
+  border-color: #000 !important;
+}
+
+body .folder-row a,
+body .fm-header,
+body #footer a {
+  color: var(--theme-link, #ddd) !important;
+}
+
+body .preview-images-btn {
+  color:#fff !important;
+  background:#0d6efd !important;
+  border:2px solid #0a58ca !important;
+}
+
+body .preview-images-btn:hover {
+  background:#0b5ed7 !important;
+  border-color:#084298 !important;
+}
+
+body #log-box {
+  background: var(--theme-card-bg, #0e0e0e) !important;
+  border-color: var(--theme-border, #333) !important;
+  color: var(--theme-log-text, #c8ffd4) !important;
+}
+
+body #workspace-img {
+  border-color:#000 !important;
+  box-shadow:0 0 0 4px rgba(0, 0, 0, 0.35) !important;
+}
+
+body .thumb img {
+  border-color: var(--theme-border, #444) !important;
+}
+
+body .disk-bar {
+  background: var(--theme-disk-bg, #333) !important;
+}
+
+body.light-mode {
+  --theme-body-bg: #eef3fb;
+  --theme-text: #1f2937;
+  --theme-sidebar-bg: #f6f9ff;
+  --theme-card-bg: #ffffff;
+  --theme-border: #bfd0e6;
+  --theme-link: #1f4f8c;
+  --theme-log-text: #1f3a2e;
+  --theme-disk-bg: #d8e4f2;
+}
+
+
+</style>
+<style>
+/* ===== Visual Restyle (Layout + Skin only, no behavior changes) ===== */
+body {
+  font-family: "Trebuchet MS", "Lucida Sans Unicode", sans-serif;
+  background:
+    linear-gradient(180deg, #0a0f1a 0%, #060a12 100%) !important;
+  color: #dfe8f4 !important;
+}
+
+.sidebar {
+  flex: 0 0 18% !important;
+  max-width: 18% !important;
+  min-width: 250px;
+  border-right: 1px solid rgba(141, 165, 207, 0.24) !important;
+  background: rgba(19, 26, 40, 0.72) !important;
+  backdrop-filter: blur(2px);
+}
+
+.main {
+  flex: 0 0 82% !important;
+  max-width: 82% !important;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.workflow-box {
+  background: rgba(22, 31, 48, 0.7) !important;
+  border: 1px solid rgba(127, 151, 192, 0.35) !important;
+}
+
+.workflow-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.workflow-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(93, 115, 150, 0.4);
+  background: rgba(68, 83, 106, 0.25);
+  color: #94a9c4;
+  font-weight: 600;
+  transition: border-color 0.25s ease, color 0.25s ease, background 0.25s ease;
+}
+
+.workflow-step:hover,
+.workflow-step.is-hot {
+  border-color: #16f0d3;
+  background: rgba(17, 92, 98, 0.36);
+  color: #ddfff8;
+}
+
+.workflow-step.is-cold {
+  background: rgba(68, 83, 106, 0.15);
+  border-color: rgba(93, 115, 150, 0.25);
+  color: #7f93ad;
+}
+
+.step-dot {
+  width: 1.55rem;
+  height: 1.55rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #d8e8ff;
+  background: rgba(108, 125, 152, 0.45);
+}
+
+.workflow-step:hover .step-dot,
+.workflow-step.is-hot .step-dot {
+  color: #052830;
+  background: #16f0d3;
+}
+
+.preview-images-btn {
+  width: 100% !important;
+  border-radius: 8px !important;
+  border: 1px solid #2e66df !important;
+  background: linear-gradient(135deg, #2f6fff, #2958d6) !important;
+  color: #e9f3ff !important;
+  justify-content: center;
+  padding: 12px 10px !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.08);
+}
+
+.preview-images-btn img {
+  filter: brightness(0) invert(1);
+}
+
+.preview-images-btn .step-dot {
+  color: #f1f8ff;
+  background: rgba(18, 42, 108, 0.7);
+}
+
+.disk-label {
+  color: #9ab1cf;
+  text-align: left;
+}
+
+.disk-bar {
+  background: rgba(57, 69, 90, 0.62);
+}
+
+#log-box {
+  min-height: 320px;
+  border-radius: 10px;
+  border: 1px solid rgba(90, 108, 136, 0.42) !important;
+}
+
+body #log-box {
+  background:
+    linear-gradient(180deg, rgba(8, 11, 18, 0.96), rgba(5, 8, 14, 0.96)),
+    repeating-linear-gradient(to right, rgba(88, 108, 142, 0.14) 0 1px, transparent 1px 18px),
+    repeating-linear-gradient(to bottom, rgba(88, 108, 142, 0.14) 0 1px, transparent 1px 18px) !important;
+}
+
+/* Keep log color pattern aligned with index.html */
+.log-green { color:#0f0 !important; }
+.log-orange { color:#ff9800 !important; }
+.log-red { color:#ff5252 !important; font-weight:bold; }
+
+body.a11y-colorblind .log-green,
+body.a11y-colorblind .log-orange,
+body.a11y-colorblind .log-red {
+  color: var(--a11y-cb-text) !important;
+}
+
+.storage-card,
+.system-log-card {
+  border: 1px solid rgba(96, 121, 160, 0.35);
+  border-radius: 10px;
+  background: rgba(28, 38, 56, 0.42);
+  padding: 10px;
+}
+
+.main-toolbar {
+  background: rgba(17, 24, 38, 0.76);
+  border: 1px solid rgba(111, 132, 170, 0.35);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-title {
+  margin: 0;
+  color: #ffb020;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.main-grid-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 66%) minmax(360px, 34%);
+  gap: 12px;
+  align-items: start;
+}
+
+.workspace-panel {
+  background: rgba(15, 22, 36, 0.7);
+  border: 1px solid rgba(118, 140, 176, 0.34);
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.workspace-title {
+  display: none;
+}
+
+.workspace-frame {
+  border: 2px solid rgba(84, 110, 148, 0.5);
+  border-radius: 12px;
+  background: rgba(4, 8, 16, 0.78);
+  padding: 12px;
+}
+
+#workspace-img {
+  border: 2px solid #22324d !important;
+  box-shadow: none !important;
+  border-radius: 8px;
+}
+
+.workspace-img-wrap {
+  position: relative;
+  display: block;
+}
+
+.workspace-grid-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  pointer-events: none;
+  border-radius: 8px;
+  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.18) 1px, transparent 1px);
+  background-size: 25% 25%;
+}
+
+.ws-origin-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4444;
+  box-shadow: 0 0 6px rgba(255,60,60,0.9);
+}
+
+.ws-origin-label {
+  position: absolute;
+  top: 6px;
+  right: 20px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #ff9999;
+  font-family: monospace;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.95);
+  white-space: nowrap;
+}
+
+.ws-axis-x {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(130,195,255,0.9);
+  font-family: monospace;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.95);
+}
+
+.ws-axis-y {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: rgba(130,195,255,0.9);
+  font-family: monospace;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.95);
+  white-space: nowrap;
+}
+
+.workspace-helper {
+  margin: 10px 0 0;
+  border: 2px solid #5d7396;
+  color: #9cb4d2;
+  padding: 8px 10px;
+  text-align: center;
+  font-weight: 700;
+  background: rgba(30, 42, 62, 0.48);
+}
+
+.workflow-side-panel {
+  background: rgba(19, 26, 40, 0.72);
+  border: 1px solid rgba(114, 136, 171, 0.34);
+  border-radius: 12px;
+  padding: 10px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.action-block-btn {
+  width: 100%;
+  text-align: left;
+  background: rgba(53, 42, 17, 0.75);
+  color: #ffb020;
+  border: 2px solid #ffb020;
+  border-radius: 0;
+  font-size: 1.05rem;
+  margin-bottom: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.action-block-btn:hover {
+  color: #ffd48b;
+  border-color: #ffd48b;
+}
+
+.action-block-btn .action-step-dot {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.action-block-label {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: #ffb020;
+  border: none;
+  border-radius: 0;
+  font-size: 1.05rem;
+  margin: 10px 0 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+}
+
+.action-step-dot {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffb020;
+  color: #1e1b0f;
+  font-weight: 900;
+  font-size: 0.95rem;
+}
+
+.action-block-label .action-step-dot {
+  width: 1.25rem;
+  height: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.workflow-side-note {
+  color: #9cb4d2;
+  margin: 4px 0 12px;
+  font-weight: 700;
+}
+
+.plate-flow-arrow {
+  display: none !important;
+}
+
+.plate-flow-region {
+  padding-left: 0;
+}
+
+.plate-step-text-inline {
+  margin-left: 0;
+}
+
+#plate-config-heading {
+  color: #e8f1ff;
+  font-weight: 800;
+}
+
+.plate-config-box {
+  background: rgba(37, 48, 66, 0.62);
+  border: 2px solid rgba(109, 133, 167, 0.65);
+  border-radius: 10px;
+  color: #e4eefb;
+}
+
+.plate-config-box input,
+.plate-config-box select,
+.plate-config-box .form-control {
+  background: rgba(7, 12, 20, 0.9);
+  color: #d6e5fb;
+  border-color: #314564;
+}
+
+.run-control-row {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.run-control-row #run-btn {
+  margin-left: 0 !important;
+}
+
+.run-details-status {
+  background: rgba(24, 34, 50, 0.92);
+  border-color: #4d6486;
+  color: #b7ccec;
+}
+
+.main-toolbar .btn-danger {
+  box-shadow: 0 0 0 2px rgba(255, 82, 82, 0.55);
+}
+
+#tsl-logo,
+#footer {
+  opacity: 0.75;
+}
+#service-status-bar {
+  text-align: center;
+  padding: 4px 0 6px;
+  font-size: 12px;
+  letter-spacing: 6px;
+}
+#service-status-bar button {
+  letter-spacing: normal;
+  font-size: 11px;
+  padding: 2px 8px;
+  opacity: 0.75;
+  border: 1px solid #6c757d;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+#troubleshooting-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+#troubleshooting-modal-backdrop.open {
+  display: flex;
+}
+#troubleshooting-modal {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid #6c757d;
+  border-radius: 8px;
+  padding: 20px 24px;
+  min-width: 260px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#troubleshooting-modal h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+#troubleshooting-modal p {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #888;
+}
+#troubleshooting-modal button {
+  width: 100%;
+  padding: 7px 0;
+  font-size: 13px;
+}
+
+#identify-modal-backdrop {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); z-index: 1000;
+  align-items: center; justify-content: center;
+}
+#identify-modal-backdrop.open { display: flex; }
+#identify-modal {
+  background: var(--bs-body-bg, #fff); border: 1px solid #6c757d;
+  border-radius: 8px; padding: 20px 24px;
+  min-width: 300px; max-width: 420px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+#identify-modal h3 { margin: 0 0 4px; font-size: 15px; }
+#identify-modal .unres-meta { margin: 0; font-size: 12px; color: #888; }
+#identify-modal label { font-size: 13px; font-weight: 600; margin-bottom: 2px; display: block; }
+#identify-modal input { width: 100%; padding: 6px 8px; font-size: 13px; box-sizing: border-box; }
+#identify-modal-error { font-size: 12px; color: #dc3545; min-height: 16px; }
+#identify-modal .modal-buttons { display: flex; gap: 8px; margin-top: 4px; }
+#identify-modal .modal-buttons button { flex: 1; padding: 7px 0; font-size: 13px; }
+
+@media (max-width: 1200px) {
+  .sidebar {
+    min-width: 220px;
+  }
+  .main-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  .workflow-side-panel {
+    max-height: none;
+    overflow: visible;
+  }
+}
+</style>
+<style>
+/* ===== Layout compatibility overrides ===== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+.app-shell {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+@supports (min-height: 100dvh) {
+  .app-shell {
+    min-height: 100dvh;
+  }
+}
+.sidebar {
+  flex: 0 0 250px !important;
+  width: 250px !important;
+  max-width: 250px !important;
+  min-width: 250px !important;
+  height: auto !important;
+  min-height: 100vh;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+.main {
+  flex: 1 1 auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+.main-grid-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+}
+.workspace-panel,
+.workspace-frame,
+.workflow-side-panel {
+  min-width: 0;
+}
+#workspace-img,
+img {
+  max-width: 100%;
+}
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: auto;
+    height: auto !important;
+  }
+  .main {
+    width: 100% !important;
+  }
+  .main-grid-layout {
+    grid-template-columns: 1fr;
+  }
+  .main-toolbar {
+    flex-wrap: wrap;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== RESUME BANNER (shown on startup when a previous run was interrupted) ===== -->
+<div id="resume-banner" style="display:none;position:sticky;top:0;z-index:9999;background:#fff3cd;border-bottom:2px solid #ffc107;padding:10px 16px;font-size:0.92em;">
+  <strong>&#9888; Previous imaging run was interrupted.</strong>
+  Plates and schedule have been restored — press <strong>Run Imaging</strong> to continue from where it left off.
+  <button onclick="document.getElementById('resume-banner').style.display='none'" style="float:right;border:none;background:transparent;font-size:1.1em;cursor:pointer;">&times;</button>
+</div>
+
+<div class="app-shell">
+
+<!-- ================= SIDEBAR ================= -->
+<div class="sidebar">
+
+  <!-- Logs -->
+  <div>
+    <h6 class="mb-2 fw-bold">Workflow Instructions</h6>
+    <div class="p-3 rounded small workflow-box workflow-steps-list">
+      <div id="wf-step-1" class="workflow-step is-cold" style="align-items:flex-start"><span class="step-dot" style="margin-top:2px;flex-shrink:0">1</span><span>Generate preview image (Scan)<br><span style="font-size:0.8em;font-weight:400;opacity:0.6">Generate preview image (Scan) &#x2192; Refresh ↻</span></span></div>
+      <div id="wf-step-2" class="workflow-step is-cold"><span class="step-dot">2</span><span>Select plates to image</span></div>
+      <div id="wf-step-3" class="workflow-step is-cold"><span class="step-dot">3</span><span>Select image interval</span></div>
+      <div id="wf-step-4" class="workflow-step is-cold"><span class="step-dot">4</span><span>Select runtime (tick plates to be included)</span></div>
+      <div id="wf-step-5" class="workflow-step is-cold"><span class="step-dot">5</span><span>Add experiment tag and notification emails (optional)</span></div>
+      <div id="wf-step-6" class="workflow-step is-cold"><span class="step-dot">6</span><span>Send run details to Automator Robot</span></div>
+      <div id="wf-step-7" class="workflow-step is-cold"><span class="step-dot">7</span><span>Run imaging</span></div>
+    </div>
+    <div class="fm-header preview-images-btn mt-3 fw-bold" onclick="openImagePreview()">
+      <span class="step-dot">8</span>
+      <img src="/static/filemanagerlogo.png" alt="File manager logo">
+      <span>Preview Images</span>
+    </div>
+    <div id="file-browser" class="file-tree"></div>
+    <div class="storage-card mt-2">
+      <div id="disk-label" class="disk-label">Disk Storage Shared Drive</div>
+      <div class="disk-bar">
+        <div id="disk-fill" class="disk-bar-fill"></div>
+      </div>
+      <div id="disk-available" class="text-center mt-1">–</div>
+    </div>
+    <div class="system-log-card mt-3">
+      <h6 class="mb-2 fw-bold">System Log</h6>
+      <div id="log-box"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ================= MAIN ================= -->
+<div class="main">
+
+<div class="main-toolbar">
+  <h4 class="toolbar-title">Workspace View</h4>
+  <div>
+    <button id="mode-toggle-btn" class="btn btn-success btn-sm me-1" onclick="toggleMode()">Mode: Dark</button>
+    <button id="font-size-toggle-btn" class="btn btn-secondary btn-sm me-1 a11y-icon-btn" onclick="cycleFontSize()">AAA</button>
+    <button id="text-color-toggle-btn" class="btn btn-secondary btn-sm me-1 a11y-icon-btn" onclick="toggleTextColorMode()">♿️</button>
+    <button class="btn btn-primary btn-sm" onclick="pauseResume()">Pause/Resume</button>
+    <button class="btn btn-warning btn-sm ms-1" onclick="startStop()">Start/Stop</button>
+  </div>
+</div>
+
+<div class="main-grid-layout">
+  <section class="workspace-panel">
+    <h4 class="workspace-title">Workspace View</h4>
+    <div class="workspace-frame">
+      <div class="workspace-img-wrap">
+        <img id="workspace-img" src="/static/workspace_overlay.png" class="mb-0">
+        <div class="workspace-grid-overlay" aria-hidden="true">
+          <span class="ws-origin-dot"></span>
+          <span class="ws-origin-label">(0,0)</span>
+          <span class="ws-axis-x">+X</span>
+          <span class="ws-axis-y">+Y</span>
+        </div>
+      </div>
+    </div>
+    <p class="workspace-helper">Click Generate Preview Image to generate preview image of the workspace</p>
+  </section>
+
+  <section class="workflow-side-panel">
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button class="btn btn-warning workflow-action-btn" style="flex:1" onclick="scanWorkspace(true, true)">1. Generate Preview Image</button>
+      <button class="btn btn-primary btn-sm" title="Refresh page" onclick="location.reload()" style="padding:0 10px;height:38px;">&#8635;</button>
+    </div>
+    <div class="action-block-label"><span class="action-step-dot">2</span><span>Select the plates you want to image</span></div>
+    <p id="plate-toggle-hint" class="workflow-side-note text-warning">Wait</p>
+
+    <div class="plate-flow-region">
+      <div class="plate-flow-arrow" aria-hidden="true"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0;">
+        <h5 id="plate-config-heading" style="margin:0;">Per-Plate Configuration (Steps 2-4)</h5>
+        <button class="btn btn-sm btn-outline-secondary" type="button" onclick="selectAllPlates()" title="Select all plates (you can still untick individual plates below)">Select All</button>
+      </div>
+      <div id="plate-configs"></div>
+      <div id="unresolved-plates" style="display:none;"></div>
+
+      <div class="run-control-row">
+        <div class="w-100">
+          <label class="form-label fw-bold mb-1" for="experiment-tag">Experiment tag <span class="small text-muted">(optional)</span></label>
+          <input
+            id="experiment-tag"
+            type="text"
+            maxlength="15"
+            class="form-control"
+            placeholder="Optional tag, max 15 chars">
+          <div class="small text-muted mt-1">Used in image filenames and folders when provided.</div>
+        </div>
+        <div class="w-100 mt-2">
+          <label class="form-label fw-bold mb-1" for="notify_emails">Notification Emails <span class="small text-muted">(comma separated)(optional)</span></label>
+          <input
+            id="notify_emails"
+            type="text"
+            class="form-control"
+            placeholder="user@nbi.ac.uk, user@tsl.ac.uk">
+        </div>
+        <button class="btn btn-warning workflow-action-btn" onclick="saveConfig()">6. Send Run Details to Automator Robot</button>
+        <span id="run-details-status" class="small fw-bold run-details-status text-warning">Run details pending</span>
+        <span id="run-action-arrow" class="workflow-inline-arrow run-action-arrow run-action-arrow-blink fw-bold">↓</span>
+        <button id="run-btn" class="btn btn-success run-progress-btn workflow-action-btn" onclick="start()">7. Run Imaging</button>
+      </div>
+    </div>
+  </section>
+</div>
+</div>
+
+</div>
+
+<img id="tsl-logo" src="/static/tsllogo.png">
+
+<div id="footer">
+  <a href="https://www.tsl.ac.uk/about/people/rohan-rebello" target="_blank">
+    Developed by Rohan TSL
+  </a>
+</div>
+
+<div id="service-status-bar">
+  <span id="kp-light" title="Klipper">&#9679; Kp</span>
+  <span id="mk-light" title="Moonraker">&#9679; Mk</span>
+  <button onclick="goToQRPage()">Go back to QR page</button>
+  <button onclick="openTroubleshootingModal()">Troubleshooting</button>
+</div>
+
+<div id="troubleshooting-modal-backdrop">
+  <div id="troubleshooting-modal">
+    <h3>Troubleshooting</h3>
+    <p>Only restart services during downtime.<br>Restarting during an active run will interrupt imaging.</p>
+    <button onclick="doRestartService('klipper')">Restart Klipper</button>
+    <button onclick="doRestartService('moonraker')">Restart Moonraker</button>
+    <button onclick="closeTroubleshootingModal()">Close</button>
+  </div>
+</div>
+
+<div id="identify-modal-backdrop">
+  <div id="identify-modal">
+    <h3>Identify plate</h3>
+    <p class="unres-meta">Detection ID: <span id="unres-modal-id"></span></p>
+    <p class="unres-meta">Position (read-only): X=<span id="unres-modal-x"></span>, Y=<span id="unres-modal-y"></span></p>
+    <div>
+      <label for="unres-modal-qr">QR data</label>
+      <input type="text" id="unres-modal-qr" placeholder="e.g. 20260101_WT_MM_CTRL_TOP" autocomplete="off">
+    </div>
+    <div id="identify-modal-error"></div>
+    <div class="modal-buttons">
+      <button onclick="closeIdentifyModal()">Cancel</button>
+      <button onclick="submitIdentify()" style="background:#ffc107;border:none;">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+function getCsrfToken(){
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
+const socket = io({transports:["websocket"]});
+let platesCache = {};
+let unresolvedCache = [];
+let _currentUnresId = null;
+let filesOpen = false;
+const RUN_DETAILS_LOG_MSG = "Config saved -> schedule rebuilt. Awaiting Start Imaging.";
+const SCAN_RUNNING_LOG_MSG = "Running USB workspace scan";
+const PLATE_DB_READY_PREFIX = "Plate DB ready:";
+const PLATE_TOGGLE_FALLBACK_MS = 3000;
+const IMAGING_COMPLETE_LOG_MSG = "All scheduled imaging complete";
+const PLATE_TOGGLE_WAIT_TEXT = "Wait";
+const PLATE_TOGGLE_READY_TEXT = "Now tick plates to be included";
+const EXPERIMENT_TAG_KEY = "experiment_tag";
+const EXPERIMENT_TAG_MAX = 15;
+let plateSelectionReady = false;
+let plateHintManualScanActive = false;
+let plateHintSawRunning = false;
+let plateHintLastProcessedIndex = 0;
+let plateHintScanRequestMs = 0;
+let plateHintScanRunningMs = 0;
+let workflowCompletionWatchActive = false;
+let workflowCompletionLogIndex = 0;
+const workflowStepState = {
+  1: false,
+  2: false,
+  3: false,
+  4: false,
+  5: false,
+  6: false
+};
+
+function renderWorkflowStepState(){
+  Object.entries(workflowStepState).forEach(([step, done])=>{
+    const el = document.getElementById(`wf-step-${step}`);
+    if(!el) return;
+    el.classList.toggle("is-hot", !!done);
+    el.classList.toggle("is-cold", !done);
+  });
+}
+
+function markWorkflowStepDone(step){
+  if(!workflowStepState[step]) {
+    workflowStepState[step] = true;
+    renderWorkflowStepState();
+  }
+}
+
+function resetWorkflowStepState(){
+  Object.keys(workflowStepState).forEach(step=>{
+    workflowStepState[step] = false;
+  });
+  renderWorkflowStepState();
+}
+
+function markWorkflowStepTwoBySelection(){
+  const anySelected = Object.values(platesCache).some(p => !!(p && p.selected));
+  if(anySelected) {
+    markWorkflowStepDone(2);
+    markWorkflowStepDone(4);
+  }
+}
+
+function markWorkflowModeChosen(){
+  markWorkflowStepDone(3);
+  markWorkflowStepDone(4);
+}
+
+renderWorkflowStepState();
+
+function sanitizeExperimentTag(raw){
+  return String(raw || "").replace(/[\r\n]/g, " ").trim().slice(0, EXPERIMENT_TAG_MAX);
+}
+
+function hydrateExperimentTag(){
+  const input = document.getElementById("experiment-tag");
+  if(!input) return;
+  input.value = sanitizeExperimentTag(localStorage.getItem(EXPERIMENT_TAG_KEY) || "");
+}
+
+function hydrateNotifyEmails(){
+  const input = document.getElementById("notify_emails");
+  if(!input) return;
+  input.value = localStorage.getItem("notify_emails") || "";
+}
+
+function getExperimentTag(){
+  const input = document.getElementById("experiment-tag");
+  const tag = sanitizeExperimentTag(input ? input.value : "");
+  if(input) input.value = tag;
+  localStorage.setItem(EXPERIMENT_TAG_KEY, tag);
+  return tag;
+}
+
+/* ================= EMERGENCY ================= */
+function emergencyConfirm(){
+  resetWorkflowStepState();
+  localStorage.removeItem("notify_emails");
+  const emailInput = document.getElementById("notify_emails");
+  if(emailInput) emailInput.value = "";
+  fetch("/emergency_stop",{method:"POST",headers:{"X-CSRFToken":getCsrfToken()}});
+}
+(function(){
+  const logo = document.getElementById("tsl-logo");
+  if(!logo) return;
+  logo.style.pointerEvents = "auto";
+  logo.style.cursor = "default";
+  let _n = 0, _t = null;
+  logo.addEventListener("click", function(){
+    _n++;
+    if(_t) clearTimeout(_t);
+    if(_n >= 3){ _n = 0; emergencyConfirm(); return; }
+    _t = setTimeout(function(){ _n = 0; }, 800);
+  });
+})();
+
+/* ================= FILE MANAGER ================= */
+function openImagePreview(){
+  const gallery = window.open("/image-gallery", "_blank");
+  if(gallery){
+    gallery.opener = null;
+  }
+}
+
+function toggleFiles(){
+  filesOpen = !filesOpen;
+  const fb = document.getElementById("file-browser");
+  if(filesOpen){
+    fb.style.display = "block";
+    loadFiles("");
+  } else {
+    fb.style.display = "none";
+  }
+}
+
+function isImageFile(name){
+  return /\.(png|jpe?g|webp|bmp|gif)$/i.test(name || "");
+}
+
+function joinPath(base, name){
+  if(!base) return name;
+  return `${base}/${name}`;
+}
+
+function appendThumb(grid, fullPath, fileName){
+  const el=document.createElement("div");
+  el.className="thumb";
+
+  const a=document.createElement("a");
+  a.href="/files/"+fullPath;
+
+  const img=document.createElement("img");
+  img.src="/files/"+fullPath;
+  a.appendChild(img);
+
+  const label=document.createElement("div");
+  label.className="thumb-name";
+  label.textContent=fileName;
+
+  el.appendChild(a);
+  el.appendChild(label);
+  grid.appendChild(el);
+}
+
+function positionPlateFlowArrow(){
+  const region = document.querySelector(".plate-flow-region");
+  const arrow = region ? region.querySelector(".plate-flow-arrow") : null;
+  const heading = document.getElementById("plate-config-heading");
+  if(!region || !arrow || !heading) return;
+
+  const topPx = Math.max(0, heading.offsetTop);
+  arrow.style.top = `${topPx}px`;
+}
+
+function loadFiles(path=""){
+  const url = path ? `/files/${path}` : `/files/`;
+  fetch(url).then(r=>r.json()).then(d=>{
+    const fb=document.getElementById("file-browser");
+    fb.innerHTML="";
+
+    const currentPath = d.path || "";
+    const dirs=d.entries.filter(e=>e.is_dir);
+    const files=d.entries.filter(e=>!e.is_dir);
+
+    const thumbs = [];
+
+    // Include direct images from current path.
+    files
+      .filter(f=>isImageFile(f.name))
+      .forEach(f=>thumbs.push({
+        fullPath: joinPath(currentPath, f.name),
+        label: f.name
+      }));
+
+    // Also collect images from immediate subfolders (thumbnail-first view).
+    Promise.all(
+      dirs.slice(0, 40).map(dir => {
+        const subPath = joinPath(currentPath, dir.name);
+        return fetch(`/files/${subPath}`)
+          .then(r => r.json())
+          .then(sd => ({ name: dir.name, path: sd.path || subPath, entries: sd.entries || [] }))
+          .catch(() => null);
+      })
+    ).then(subdirs => {
+      subdirs.filter(Boolean).forEach(sd => {
+        sd.entries
+          .filter(e => !e.is_dir && isImageFile(e.name))
+          .slice(0, 12)
+          .forEach(f => thumbs.push({
+            fullPath: joinPath(sd.path, f.name),
+            label: `${sd.name}/${f.name}`
+          }));
+      });
+
+      if(!thumbs.length){
+        const msg = document.createElement("div");
+        msg.className = "small text-muted mt-2";
+        msg.textContent = "No image thumbnails available.";
+        fb.appendChild(msg);
+        return;
+      }
+
+      const grid=document.createElement("div");
+      grid.className="thumb-grid";
+      thumbs.slice(0, 120).forEach(t => appendThumb(grid, t.fullPath, t.label));
+      fb.appendChild(grid);
+    });
+  });
+}
+
+/* ================= DISK ================= */
+function refreshDisk(){
+  fetch("/system/disk").then(r=>r.json()).then(d=>{
+    const label = document.getElementById("disk-label");
+    if(label && d.label){
+      label.innerText = d.label;
+    }
+    if(d.error || !d.total_gb){
+      document.getElementById("disk-fill").style.width="0%";
+      document.getElementById("disk-available").innerText =
+        d.error ? `Storage unavailable: ${d.error}` : "Storage unavailable";
+      return;
+    }
+    const pct=Math.round((d.used_gb/d.total_gb)*100);
+    document.getElementById("disk-fill").style.width=pct+"%";
+    document.getElementById("disk-available").innerText =
+      `${d.free_gb} GB free of ${d.total_gb} GB`;
+  });
+}
+refreshDisk();
+setInterval(refreshDisk,10000);
+
+/* ================= WORKSPACE ================= */
+function scanWorkspace(withPulse=false, manualTrigger=false){
+  if(manualTrigger){
+    markWorkflowStepDone(1);
+    plateHintManualScanActive = true;
+    plateHintSawRunning = false;
+    plateHintLastProcessedIndex = logBuffer.length;
+    plateHintScanRequestMs = Date.now();
+    plateHintScanRunningMs = 0;
+    setPlateSelectionReady(false);
+    localStorage.removeItem(EXPERIMENT_TAG_KEY);
+    const tagInput = document.getElementById("experiment-tag");
+    if(tagInput) tagInput.value = "";
+    localStorage.removeItem("notify_emails");
+    const emailInput = document.getElementById("notify_emails");
+    if(emailInput) emailInput.value = "";
+    platesCache = {};
+    unresolvedCache = [];
+    renderPlates();
+    renderUnresolvedPlates();
+    const workspaceImg = document.getElementById("workspace-img");
+    if(workspaceImg) workspaceImg.removeAttribute("src");
+    closeIdentifyModal();
+  }
+  const detectUrl = withPulse ? "/detect?pulse=1" : "/detect";
+  fetch(detectUrl).then(r=>r.json()).then(d=>{
+    if(d.running) return; // scan already in progress — results will arrive via socket
+    // d.queued: true → wait for socket "workspace" event for results
+  });
+}
+
+/* ================= PLATES ================= */
+function toLocalIsoNoSeconds(dt){
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const d = String(dt.getDate()).padStart(2, "0");
+  const h = String(dt.getHours()).padStart(2, "0");
+  const mi = String(dt.getMinutes()).padStart(2, "0");
+  return `${y}-${m}-${d}T${h}:${mi}`;
+}
+
+function syncUiIntoCache(){
+  Object.keys(platesCache).forEach(id=>{
+    const descEl = document.getElementById(id+"_desc");
+    const everyEl = document.getElementById(id+"_every");
+    const runtimeEl = document.getElementById(id+"_runtime");
+    const modeEl = document.querySelector(`input[name="${id}_mode"]:checked`);
+    if(!descEl || !everyEl || !runtimeEl || !modeEl) return;
+
+    platesCache[id].desc = descEl.value;
+    platesCache[id].interval = Math.max(1, parseInt(everyEl.value, 10) || 1);
+    platesCache[id].ui_runtime_hours = Math.max(0.0167, parseFloat(runtimeEl.value) || 0.0167);
+    platesCache[id].ui_mode = modeEl.value;
+  });
+}
+
+function computeEndForPlate(id){
+  const everyMin = Math.max(1, parseInt(document.getElementById(id+"_every").value, 10) || 1);
+  const modeEl = document.querySelector(`input[name="${id}_mode"]:checked`);
+  const mode = modeEl ? modeEl.value : "runtime";
+
+  let durationMin = 0;
+  let modeText = "";
+  const runtimeHours = Math.max(0.0167, parseFloat(document.getElementById(id+"_runtime").value) || 0.0167);
+  durationMin = Math.max(1, Math.round(runtimeHours * 60));
+  modeText = `Runtime: Image for ${runtimeHours} hour(s)`;
+
+  const endDt = new Date(Date.now() + durationMin * 60000);
+  return {
+    end: toLocalIsoNoSeconds(endDt),
+    mode,
+    durationMin,
+    modeText
+  };
+}
+
+function updateEndPreview(id){
+  const preview = document.getElementById(id+"_end_preview");
+  if(!preview) return;
+  const result = computeEndForPlate(id);
+  preview.textContent = `${result.modeText} | Estimated end: ${new Date(result.end).toLocaleString()}`;
+}
+
+function renderUnresolvedPlates(){
+  const box=document.getElementById("unresolved-plates");
+  if(!box) return;
+  box.replaceChildren();
+  if(!unresolvedCache.length){box.style.display="none";return;}
+  box.style.display="";
+  const hdr=document.createElement("p");
+  hdr.className="fw-bold mb-2";hdr.style.color="#fd7e14";
+  hdr.textContent="Plates detected but QR unreadable:";
+  box.appendChild(hdr);
+  unresolvedCache.forEach(plate=>{
+    const row=document.createElement("div");
+    row.className="d-flex align-items-center gap-2 mb-2 p-2 border rounded";
+    const isFallback=plate.detection_source==="geometric_fallback";
+    row.style.borderColor=isFallback?"#cc00cc":"#fd7e14";
+    row.style.background="#e8f5e9";
+    const info=document.createElement("span");
+    info.className="text-muted small flex-grow-1";
+    info.style.color="#155724";
+    const sourceTag=isFallback?"Fallback detection":`conf: ${(plate.confidence||0).toFixed(2)}`;
+    info.textContent=`X=${plate.position_mm.x.toFixed(1)} mm  Y=${plate.position_mm.y.toFixed(1)} mm  (${sourceTag})`;
+    row.appendChild(info);
+    const idBtn=document.createElement("button");
+    idBtn.className="btn btn-sm btn-warning";idBtn.textContent="Identify";
+    idBtn.onclick=()=>openIdentifyModal(plate);
+    row.appendChild(idBtn);
+    const dimBtn=document.createElement("button");
+    dimBtn.className="btn btn-sm btn-outline-secondary";dimBtn.textContent="Dismiss";
+    dimBtn.onclick=()=>dismissUnresolved(plate.track_id);
+    row.appendChild(dimBtn);
+    box.appendChild(row);
+  });
+}
+
+function openIdentifyModal(plate){
+  _currentUnresId=plate.track_id;
+  document.getElementById("unres-modal-id").textContent=plate.track_id;
+  document.getElementById("unres-modal-x").textContent=plate.position_mm.x.toFixed(1)+" mm";
+  document.getElementById("unres-modal-y").textContent=plate.position_mm.y.toFixed(1)+" mm";
+  document.getElementById("unres-modal-qr").value="";
+  document.getElementById("identify-modal-error").textContent="";
+  document.getElementById("identify-modal-backdrop").classList.add("open");
+}
+
+function closeIdentifyModal(){
+  _currentUnresId = null;
+  document.getElementById("identify-modal-backdrop").classList.remove("open");
+}
+
+async function submitIdentify(){
+  const qr=document.getElementById("unres-modal-qr").value.trim();
+  document.getElementById("identify-modal-error").textContent="";
+  if(!qr){document.getElementById("identify-modal-error").textContent="QR data is required.";return;}
+  if(!_currentUnresId) return;
+  const saveBtn=document.querySelector("#identify-modal .modal-buttons button:last-child");
+  if(saveBtn) saveBtn.disabled=true;
+  try {
+    const resp=await fetch(`/plates/${encodeURIComponent(_currentUnresId)}/identify`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},
+      credentials:"include",
+      body:JSON.stringify({qr_data:qr}),
+    });
+    if(resp.ok){
+      closeIdentifyModal();
+    } else {
+      let errMsg="Unknown error";
+      try{const d=await resp.json();errMsg=d.error||errMsg;}catch(e){}
+      document.getElementById("identify-modal-error").textContent=errMsg;
+    }
+  } catch(e){
+    document.getElementById("identify-modal-error").textContent="Network error. Try again.";
+  } finally {
+    if(saveBtn) saveBtn.disabled=false;
+  }
+}
+
+async function dismissUnresolved(unresId){
+  try {
+    await fetch(`/plates/${encodeURIComponent(unresId)}/dismiss`,{
+      method:"POST",
+      headers:{"X-CSRFToken":getCsrfToken()},
+      credentials:"include",
+    });
+  } catch(e){
+    console.error("Dismiss failed:",e);
+  }
+}
+
+function renderPlates(){
+  const box=document.getElementById("plate-configs");
+  box.replaceChildren();
+  Object.entries(platesCache).forEach(([id,p])=>{
+    const runtimeHours = p.ui_runtime_hours || 2;
+
+    const card=document.createElement("div");
+    card.className="plate-config-box";
+
+    const title=document.createElement("b");
+    title.textContent=id;
+    card.appendChild(title);
+
+    const descInput=document.createElement("input");
+    descInput.className="form-control mb-2";
+    descInput.id=id+"_desc";
+    descInput.value=p.desc||"";
+    descInput.placeholder="Description";
+    card.appendChild(descInput);
+
+    const startDiv=document.createElement("div");
+    startDiv.className="text-muted small mb-2";
+    startDiv.textContent="Start: "+(p.start_dt ? new Date(p.start_dt).toLocaleString() : "Not started");
+    card.appendChild(startDiv);
+
+    const toggleRow=document.createElement("div");
+    toggleRow.className="d-flex align-items-center gap-2 mb-2";
+
+    const toggleSpan=document.createElement("span");
+    toggleSpan.className="include-toggle "+(p.selected?"include-on":"include-off");
+    toggleSpan.textContent=p.selected?"✔":"✖";
+    toggleSpan.addEventListener("click",()=>toggleInclude(id));
+    toggleRow.appendChild(toggleSpan);
+
+    const toggleLabel=document.createElement("span");
+    toggleLabel.textContent=(p.selected?"Included in imaging":"Excluded from imaging")+" (click toggle)";
+    toggleRow.appendChild(toggleLabel);
+
+    const settingsRow=document.createElement("div");
+    settingsRow.className="d-flex align-items-center gap-2 flex-wrap";
+
+    const intervalHeader=document.createElement("span");
+    intervalHeader.className="fw-bold";
+    intervalHeader.textContent="3. Select imaging interval";
+    settingsRow.appendChild(intervalHeader);
+
+    const br1=document.createElement("div");
+    br1.className="w-100";
+    settingsRow.appendChild(br1);
+
+    const everyLabel=document.createElement("span");
+    everyLabel.className="fw-bold";
+    everyLabel.textContent="Image every";
+    settingsRow.appendChild(everyLabel);
+
+    const everyInput=document.createElement("input");
+    everyInput.id=id+"_every";
+    everyInput.type="number";
+    everyInput.className="form-control";
+    everyInput.style.width="90px";
+    everyInput.min="1";
+    everyInput.value=String(p.interval||30);
+    everyInput.addEventListener("input",()=>{updateEndPreview(id);markWorkflowStepDone(3);});
+    settingsRow.appendChild(everyInput);
+
+    const minutesLabel=document.createElement("span");
+    minutesLabel.className="fw-bold";
+    minutesLabel.textContent="minute(s)";
+    settingsRow.appendChild(minutesLabel);
+
+    const br2=document.createElement("div");
+    br2.className="w-100";
+    settingsRow.appendChild(br2);
+
+    const modeHeader=document.createElement("span");
+    modeHeader.className="fw-bold";
+    modeHeader.textContent="4. Select runtime";
+    settingsRow.appendChild(modeHeader);
+
+    const br3=document.createElement("div");
+    br3.className="w-100";
+    settingsRow.appendChild(br3);
+
+    const runtimeCheck=document.createElement("div");
+    runtimeCheck.className="form-check";
+
+    const runtimeRadio=document.createElement("input");
+    runtimeRadio.className="form-check-input";
+    runtimeRadio.type="radio";
+    runtimeRadio.name=id+"_mode";
+    runtimeRadio.id=id+"_mode_runtime";
+    runtimeRadio.value="runtime";
+    runtimeRadio.checked=true;
+    runtimeRadio.addEventListener("change",()=>{updateEndPreview(id);markWorkflowModeChosen();});
+    runtimeCheck.appendChild(runtimeRadio);
+
+    const runtimeRadioLabel=document.createElement("label");
+    runtimeRadioLabel.className="form-check-label";
+    runtimeRadioLabel.htmlFor=id+"_mode_runtime";
+    runtimeRadioLabel.textContent="Runtime";
+    runtimeCheck.appendChild(runtimeRadioLabel);
+
+    settingsRow.appendChild(runtimeCheck);
+
+    const runtimeInput=document.createElement("input");
+    runtimeInput.id=id+"_runtime";
+    runtimeInput.type="number";
+    runtimeInput.className="form-control";
+    runtimeInput.style.width="110px";
+    runtimeInput.min="0.0167";
+    runtimeInput.step="0.1";
+    runtimeInput.value=String(runtimeHours);
+    runtimeInput.addEventListener("input",()=>{updateEndPreview(id);markWorkflowStepDone(4);});
+    settingsRow.appendChild(runtimeInput);
+
+    const hoursLabel=document.createElement("span");
+    hoursLabel.className="fw-bold";
+    hoursLabel.textContent="hour(s)";
+    settingsRow.appendChild(hoursLabel);
+
+    const br4=document.createElement("div");
+    br4.className="w-100";
+    settingsRow.appendChild(br4);
+
+    const endPreview=document.createElement("div");
+    endPreview.className="small text-muted fw-bold";
+    endPreview.id=id+"_end_preview";
+    endPreview.textContent="Estimated end: calculating...";
+    settingsRow.appendChild(endPreview);
+
+    card.appendChild(settingsRow);
+    card.appendChild(toggleRow);
+    box.appendChild(card);
+  });
+  if(Object.keys(platesCache).length > 0) markWorkflowStepDone(1);
+  markWorkflowStepTwoBySelection();
+  Object.keys(platesCache).forEach(id => updateEndPreview(id));
+  positionPlateFlowArrow();
+}
+
+function selectAllPlates(){
+  syncUiIntoCache();
+  Object.keys(platesCache).forEach(id => { platesCache[id].selected = true; });
+  markWorkflowStepTwoBySelection();
+  renderPlates();
+}
+
+function toggleInclude(id){
+  syncUiIntoCache();
+  platesCache[id].selected=!platesCache[id].selected;
+  markWorkflowStepTwoBySelection();
+  renderPlates();
+}
+
+/* ================= SAVE CONFIG (single definition) ================= */
+function saveConfig(){
+  markWorkflowStepDone(5);
+  markWorkflowStepDone(6);
+  const cfg={};
+  const experimentTag = getExperimentTag();
+  syncUiIntoCache();
+  const uiSnapshot = {};
+  const runDetailsStatus = document.getElementById("run-details-status");
+  stopPlateToggleHintBlinking();
+  if(runDetailsStatus){
+    runDetailsStatus.textContent = "Sending run details...";
+    runDetailsStatus.classList.remove("text-success", "text-danger");
+    runDetailsStatus.classList.add("text-warning");
+  }
+
+  Object.keys(platesCache).forEach(id=>{
+    const endCalc = computeEndForPlate(id);
+    uiSnapshot[id] = {
+      ui_mode: platesCache[id].ui_mode,
+      ui_runtime_hours: platesCache[id].ui_runtime_hours
+    };
+    cfg[id]={
+      desc:document.getElementById(id+"_desc").value,
+      every_min:Math.max(1, parseInt(document.getElementById(id+"_every").value, 10) || 1),
+      end:endCalc.end,
+      duration_min:endCalc.durationMin,
+      selected:platesCache[id].selected,
+      mode:endCalc.mode
+    };
+  });
+
+  var _popupNow = Date.now();
+  var _selectedIds = Object.keys(cfg).filter(function(id){ return cfg[id].selected; }).sort();
+  var _maxEndMs = 0;
+  var _totalImgs = 0;
+  _selectedIds.forEach(function(id, idx){
+    var durMin = cfg[id].duration_min || 0;
+    var everyMin = cfg[id].every_min || 1;
+    var endMs = _popupNow + idx * 90000 + durMin * 60000;
+    if(endMs > _maxEndMs) _maxEndMs = endMs;
+    _totalImgs += Math.max(1, Math.ceil(durMin / everyMin));
+  });
+  var _popupEmail = ((document.getElementById("notify_emails")||{}).value||"").trim();
+
+  fetch("/config?pulse=1",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},
+    body:JSON.stringify({
+      experiment_tag: experimentTag,
+      plates: cfg
+    })
+  })
+  .then(()=> {
+    // Reload authoritative state from backend
+    return fetch("/system/state");
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    platesCache = d.plates || {};
+    Object.keys(uiSnapshot).forEach(id=>{
+      if(platesCache[id]) {
+        platesCache[id].ui_mode = uiSnapshot[id].ui_mode;
+        platesCache[id].ui_runtime_hours = uiSnapshot[id].ui_runtime_hours;
+      }
+    });
+    renderPlates();
+    return fetch("/system/logs");
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    logBuffer=(d.logs||[]).slice(-MAX_LOGS).map(l=>l.trim());
+    renderLogs();
+    if(_maxEndMs > 0) showRunEndPopup(_maxEndMs, _totalImgs, _popupEmail);
+  });
+}
+
+/* ================= CONTROL ================= */
+function markRunImagingArrowStarted(){
+  const arrow = document.getElementById("run-action-arrow");
+  if(!arrow) return;
+  arrow.classList.remove("run-action-arrow-blink");
+  arrow.classList.add("run-action-arrow-ready");
+}
+
+function start(){
+  markWorkflowStepDone(7);
+  workflowCompletionWatchActive = true;
+  workflowCompletionLogIndex = logBuffer.length;
+  markRunImagingArrowStarted();
+  const emailInput = document.getElementById("notify_emails");
+  const emails = emailInput ? emailInput.value.trim() : (localStorage.getItem("notify_emails") || "");
+  if(emailInput) localStorage.setItem("notify_emails", emails);
+
+  fetch("/system/start",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","X-CSRFToken":getCsrfToken()},
+    body: JSON.stringify({ notify_emails: emails })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if(res && res.error) alert(res.error);
+    refreshRunProgress();
+  })
+  .catch(err => {
+    alert("Start failed: " + err);
+  });
+}
+
+function openTroubleshootingModal(){
+  document.getElementById("troubleshooting-modal-backdrop").classList.add("open");
+}
+function closeTroubleshootingModal(){
+  document.getElementById("troubleshooting-modal-backdrop").classList.remove("open");
+}
+function doRestartService(service){
+  const label = service === "klipper" ? "Klipper" : "Moonraker";
+  if(!window.confirm("Restart " + label + "? This will interrupt any active imaging run.")) return;
+  closeTroubleshootingModal();
+  fetch("/system/restart-" + service, {method:"POST",headers:{"X-CSRFToken":getCsrfToken()}})
+    .then(r => r.json())
+    .then(d => alert(d.msg))
+    .catch(() => alert("Request failed — check network."));
+}
+
+function goToQRPage(){
+  fetch("/system/state")
+    .then(r => r.json())
+    .then(state => {
+      if(state && state.imaging_active){
+        if(!window.confirm("An imaging run is in progress. Leave this page and go to the QR setup page?")) return;
+      }
+      window.location.assign("/");
+    })
+    .catch(() => window.location.assign("/"));
+}
+
+function pause(){ fetch("/system/pause",{method:"POST",headers:{"X-CSRFToken":getCsrfToken()}}); }
+function resume(){ fetch("/system/unpause",{method:"POST",headers:{"X-CSRFToken":getCsrfToken()}}); }
+function pauseResume(){
+  fetch("/system/state")
+    .then(r=>r.json())
+    .then(state=>{
+      if(!state || !state.imaging_active) return;
+      const shouldResume = !!(state.paused || state.pause_requested);
+      const confirmMessage = shouldResume
+        ? "Resuming from remaining time of schedule."
+        : "Are you sure you want to Pause? (System will resume from remaining time of schedule when you press this button again)";
+      if(!window.confirm(confirmMessage)) return;
+      const endpoint = shouldResume ? "/system/unpause" : "/system/pause";
+      return fetch(endpoint,{method:"POST",headers:{"X-CSRFToken":getCsrfToken()}});
+    })
+    .catch(err=>alert("Pause/Resume failed: "+err));
+}
+function startStop(){
+  resetWorkflowStepState();
+  fetch("/system/state")
+    .then(r=>r.json())
+    .then(state=>{
+      const shouldStop = !!(state && state.imaging_active);
+      const confirmMessage = shouldStop
+        ? "Are you sure you want to Stop? (System will start from from beginning. Follow Workflow instructions)"
+        : "Starting New Cycle, Follow Workflow Instructions";
+      if(!window.confirm(confirmMessage)) return null;
+      return fetch("/system/start_stop",{method:"POST",headers:{"X-CSRFToken":getCsrfToken()}});
+    })
+    .then(r=>r ? r.json() : null)
+    .then(res=>{
+      if(!res) return;
+      if(res && res.error) alert(res.error);
+    })
+    .catch(err=>alert("Start/Stop failed: "+err));
+}
+
+/* ================= LOGGING ================= */
+const MAX_LOGS=15;
+let logBuffer=[];
+
+function logClass(msg){
+  const orange=[
+    "=== SYSTEM READY ===",
+    "Running USB workspace scan",
+    "Imaging cycle launched",
+    "Imaging cycle started",
+    "⏸ Imaging paused",
+    "▶ Imaging resumed",
+    "All scheduled imaging complete"
+  ];
+  const red=[
+    "EMERGENCY STOP",
+    "Controller shutting down via SIGINT"
+  ];
+  if(red.some(k=>msg.includes(k))) return "log-red";
+  if(orange.some(k=>msg.includes(k))) return "log-orange";
+  return "log-green";
+}
+
+function renderLogs(){
+  const box=document.getElementById("log-box");
+  box.innerHTML="";
+  logBuffer.forEach(l=>{
+    const d=document.createElement("div");
+    d.className=`log-line ${logClass(l)}`;
+    d.textContent=l;
+    box.appendChild(d);
+  });
+  box.scrollTop=box.scrollHeight;
+  updateRunDetailsStatusFromLogs();
+  updatePlateToggleHintFromLogs();
+  updateWorkflowStepResetFromLogs();
+}
+
+function setPlateSelectionReady(ready){
+  const hintEl = document.getElementById("plate-toggle-hint");
+  if(!hintEl) return;
+  if(plateSelectionReady === ready) return;
+
+  plateSelectionReady = ready;
+  hintEl.classList.remove("text-warning", "text-success");
+  if(ready){
+    hintEl.classList.add("text-success");
+    hintEl.textContent = PLATE_TOGGLE_READY_TEXT;
+  } else {
+    hintEl.classList.add("text-warning");
+    hintEl.textContent = PLATE_TOGGLE_WAIT_TEXT;
+  }
+}
+
+function stopPlateToggleHintBlinking(){
+  plateHintManualScanActive = false;
+  plateHintSawRunning = false;
+  plateHintLastProcessedIndex = logBuffer.length;
+  plateHintScanRequestMs = 0;
+  plateHintScanRunningMs = 0;
+  const hintEl = document.getElementById("plate-toggle-hint");
+  if(!hintEl) return;
+  hintEl.classList.remove("text-warning");
+  hintEl.classList.add("text-success");
+  hintEl.textContent = PLATE_TOGGLE_READY_TEXT;
+}
+
+function applyPlateToggleFallbackIfStale(){
+  if(!plateHintManualScanActive || plateSelectionReady) return;
+  const now = Date.now();
+  const baselineMs = (plateHintSawRunning && plateHintScanRunningMs > 0)
+    ? plateHintScanRunningMs
+    : plateHintScanRequestMs;
+  if(!baselineMs) return;
+  if((now - baselineMs) < PLATE_TOGGLE_FALLBACK_MS) return;
+
+  setPlateSelectionReady(true);
+  plateHintManualScanActive = false;
+  plateHintSawRunning = false;
+  plateHintScanRequestMs = 0;
+  plateHintScanRunningMs = 0;
+  plateHintLastProcessedIndex = logBuffer.length;
+}
+
+function updatePlateToggleHintFromLogs(){
+  if(!plateHintManualScanActive || logBuffer.length===0) return;
+  if(plateHintLastProcessedIndex > logBuffer.length){
+    plateHintLastProcessedIndex = logBuffer.length;
+  }
+  for(let i=plateHintLastProcessedIndex; i<logBuffer.length; i++){
+    const line = logBuffer[i] || "";
+    if(line.includes(SCAN_RUNNING_LOG_MSG)) {
+      plateHintSawRunning = true;
+      plateHintScanRunningMs = Date.now();
+      setPlateSelectionReady(false);
+      continue;
+    }
+    if(plateHintSawRunning && line.includes(PLATE_DB_READY_PREFIX)) {
+      setPlateSelectionReady(true);
+      plateHintManualScanActive = false;
+      plateHintScanRequestMs = 0;
+      plateHintScanRunningMs = 0;
+    }
+  }
+  plateHintLastProcessedIndex = logBuffer.length;
+  applyPlateToggleFallbackIfStale();
+}
+
+function updateWorkflowStepResetFromLogs(){
+  if(!workflowCompletionWatchActive) return;
+  if(workflowCompletionLogIndex > logBuffer.length){
+    workflowCompletionLogIndex = logBuffer.length;
+  }
+  for(let i=workflowCompletionLogIndex; i<logBuffer.length; i++){
+    const line = logBuffer[i] || "";
+    if(line.includes(IMAGING_COMPLETE_LOG_MSG)){
+      workflowCompletionWatchActive = false;
+      resetWorkflowStepState();
+      break;
+    }
+  }
+  workflowCompletionLogIndex = logBuffer.length;
+}
+
+function updateRunDetailsStatusFromLogs(){
+  const statusEl = document.getElementById("run-details-status");
+  if(!statusEl) return;
+  const sent = logBuffer.some(l => l.includes(RUN_DETAILS_LOG_MSG));
+  if(sent){
+    statusEl.textContent = "Run details sent";
+    statusEl.classList.remove("text-warning", "text-danger");
+    statusEl.classList.add("text-success");
+  } else {
+    statusEl.textContent = "Run details pending";
+    statusEl.classList.remove("text-success", "text-danger");
+    statusEl.classList.add("text-warning");
+  }
+}
+
+function setRunButtonProgress(pct, complete){
+  const btn = document.getElementById("run-btn");
+  if(!btn) return;
+  const safePct = Math.max(0, Math.min(100, Number(pct) || 0));
+  if(complete){
+    btn.style.background = "#198754";
+    btn.style.borderColor = "#198754";
+    btn.style.color = "#fff";
+    return;
+  }
+  btn.style.background = `linear-gradient(to right, #198754 ${safePct}%, #dc3545 ${safePct}%)`;
+  btn.style.borderColor = safePct >= 50 ? "#198754" : "#dc3545";
+  btn.style.color = "#fff";
+}
+
+function refreshRunProgress(){
+  fetch("/system/state")
+    .then(r => r.json())
+    .then(state => {
+      const tasks = Array.isArray(state.schedule) ? state.schedule : [];
+      let total = 0;
+      let remaining = 0;
+
+      tasks.forEach(t => {
+        const taskCount = Math.max(0, parseInt(t.count, 10) || 0);
+        const taskRemaining = Math.max(0, parseInt(t.remaining, 10) || 0);
+        const safeCount = taskCount > 0 ? taskCount : taskRemaining;
+        total += safeCount;
+        remaining += Math.min(taskRemaining, safeCount);
+      });
+
+      let pct = 0;
+      if(total > 0){
+        pct = ((total - remaining) / total) * 100;
+      }
+      const complete = total > 0 && remaining <= 0 && !state.imaging_active;
+      setRunButtonProgress(pct, complete);
+    })
+    .catch(() => {});
+}
+
+socket.on("status", d=>{
+  logBuffer.push(d.msg);
+  if(logBuffer.length>MAX_LOGS) logBuffer=logBuffer.slice(-MAX_LOGS);
+  renderLogs();
+});
+
+socket.on("resume_available", ()=>{
+  document.getElementById("resume-banner").style.display="block";
+});
+
+socket.on("workspace", d=>{
+  if(d.plates){
+    platesCache=d.plates;
+    renderPlates();
+    document.getElementById("workspace-img").src=
+      "/static/workspace_overlay.png?ts="+Date.now();
+  }
+  if(d.unresolved !== undefined){
+    unresolvedCache=d.unresolved;
+    renderUnresolvedPlates();
+  }
+});
+
+function loadInitialLogs(){
+  fetch("/system/logs").then(r=>r.json()).then(d=>{
+    logBuffer=(d.logs||[]).slice(-5).map(l=>l.trim());
+    renderLogs();
+  });
+}
+
+setInterval(()=>{
+  fetch("/system/logs").then(r=>r.json()).then(d=>{
+    const latest=(d.logs||[]).slice(-MAX_LOGS).map(l=>l.trim());
+    if(latest.join()!==logBuffer.join()){
+      logBuffer=latest;
+      renderLogs();
+    }
+  });
+},5000);
+
+setInterval(applyPlateToggleFallbackIfStale, 250);
+
+setInterval(refreshRunProgress, 3000);
+
+/* ================= RUN END POPUP ================= */
+var _runEndPopupTimer = null;
+var _runEndPopupCountdown = null;
+
+function dismissRunEndPopup(){
+  var el = document.getElementById("run-end-popup");
+  if(el) el.style.display = "none";
+  if(_runEndPopupTimer){ clearTimeout(_runEndPopupTimer); _runEndPopupTimer = null; }
+  if(_runEndPopupCountdown){ clearInterval(_runEndPopupCountdown); _runEndPopupCountdown = null; }
+  sessionStorage.removeItem("run_popup_data");
+}
+
+function showRunEndPopup(endMs, totalImages, email){
+  var el = document.getElementById("run-end-popup");
+  var msgEl = document.getElementById("run-end-popup-msg");
+  var cntEl = document.getElementById("run-end-popup-countdown");
+  if(!el || !msgEl) return;
+  var endDate = new Date(endMs);
+  var dateStr = endDate.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  var timeStr = endDate.toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"});
+  var imgWord = totalImages === 1 ? "image" : "images";
+  var msg = "Current run finishes at <strong>" + dateStr + " " + timeStr + "</strong> (" + totalImages + " " + imgWord + ").";
+  if(email) msg += "<br>An email will be sent to <strong>" + email + "</strong>.";
+  msgEl.innerHTML = msg;
+  el.style.display = "block";
+  sessionStorage.setItem("run_popup_data", JSON.stringify({endMs:endMs,totalImages:totalImages,email:email}));
+  if(_runEndPopupTimer) clearTimeout(_runEndPopupTimer);
+  if(_runEndPopupCountdown) clearInterval(_runEndPopupCountdown);
+  var remaining = 60;
+  cntEl.textContent = "Auto-dismiss in " + remaining + "s";
+  _runEndPopupCountdown = setInterval(function(){
+    remaining--;
+    if(remaining > 0) cntEl.textContent = "Auto-dismiss in " + remaining + "s";
+    else { clearInterval(_runEndPopupCountdown); _runEndPopupCountdown = null; }
+  }, 1000);
+  _runEndPopupTimer = setTimeout(dismissRunEndPopup, 60000);
+}
+
+/* ================= INIT ================= */
+hydrateExperimentTag();
+hydrateNotifyEmails();
+loadInitialLogs();
+refreshRunProgress();
+positionPlateFlowArrow();
+fetch("/system/state").then(r=>r.json()).then(d=>{
+  platesCache=d.plates||{};
+  unresolvedCache=d.unresolved||[];
+  renderUnresolvedPlates();
+  if(Object.keys(platesCache).length===0) scanWorkspace();
+  else renderPlates();
+  if(d.imaging_active){
+    try{
+      var _pd = JSON.parse(sessionStorage.getItem("run_popup_data")||"null");
+      if(_pd && _pd.endMs > Date.now()) showRunEndPopup(_pd.endMs, _pd.totalImages, _pd.email);
+      else sessionStorage.removeItem("run_popup_data");
+    }catch(e){}
+  } else {
+    sessionStorage.removeItem("run_popup_data");
+  }
+});
+
+window.addEventListener("resize", positionPlateFlowArrow);
+</script>
+
+<!-- THEME ENGINE SCRIPT -->
+<script>
+const THEME_ORDER = ["default"];
+const MODE_KEY = "automator_mode";
+const THEME_KEY = "automator_theme_manual";
+const FONT_SIZE_KEY = "automator_font_size";
+const TEXT_COLOR_KEY = "automator_text_color";
+const FONT_SIZE_ORDER = ["normal", "large", "xlarge"];
+
+function getAutoTheme(){
+  return "default";
+}
+
+function applyTheme(theme){
+  document.body.dataset.theme = "default";
+  updateThemeButtons();
+}
+
+function toggleMode(){
+  const willBeLight = !document.body.classList.contains("light-mode");
+  if(willBeLight){
+    document.body.classList.add("light-mode");
+    localStorage.setItem(MODE_KEY, "light");
+  } else {
+    document.body.classList.remove("light-mode");
+    localStorage.setItem(MODE_KEY, "dark");
+  }
+  updateThemeButtons();
+}
+
+function cycleTheme(){
+  const currentTheme = localStorage.getItem(THEME_KEY) || document.body.dataset.theme || "default";
+  const idx = THEME_ORDER.indexOf(currentTheme);
+  const nextTheme = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
+  localStorage.setItem(THEME_KEY, nextTheme);
+  applyTheme(nextTheme);
+}
+
+function updateThemeButtons(){
+  const modeBtn = document.getElementById("mode-toggle-btn");
+  const themeBtn = document.getElementById("theme-cycle-btn");
+  const isLight = document.body.classList.contains("light-mode");
+  const theme = document.body.dataset.theme || "default";
+
+  if(modeBtn){
+    modeBtn.textContent = isLight ? "Mode: Light" : "Mode: Dark";
+  }
+
+  if(themeBtn){
+    themeBtn.textContent = `Theme: ${theme.charAt(0).toUpperCase()}${theme.slice(1)}`;
+  }
+  updateAccessibilityButtons();
+}
+
+function applyFontSize(mode){
+  const safeMode = FONT_SIZE_ORDER.includes(mode) ? mode : "normal";
+  document.body.classList.remove("a11y-font-normal", "a11y-font-large", "a11y-font-xlarge");
+  if(safeMode === "large"){
+    document.body.classList.add("a11y-font-large");
+  } else if(safeMode === "xlarge"){
+    document.body.classList.add("a11y-font-xlarge");
+  } else {
+    document.body.classList.add("a11y-font-normal");
+  }
+  const rootScale = safeMode === "xlarge" ? "1.25" : (safeMode === "large" ? "1.125" : "1");
+  document.documentElement.style.setProperty("--a11y-font-scale", rootScale);
+  localStorage.setItem(FONT_SIZE_KEY, safeMode);
+  updateAccessibilityButtons();
+}
+
+function cycleFontSize(){
+  const current = localStorage.getItem(FONT_SIZE_KEY) || "normal";
+  const idx = FONT_SIZE_ORDER.indexOf(current);
+  const next = FONT_SIZE_ORDER[(idx + 1) % FONT_SIZE_ORDER.length];
+  applyFontSize(next);
+}
+
+function applyTextColorMode(mode){
+  const safeMode = mode === "colorblind" ? "colorblind" : "normal";
+  document.body.classList.toggle("a11y-colorblind", safeMode === "colorblind");
+  localStorage.setItem(TEXT_COLOR_KEY, safeMode);
+  updateAccessibilityButtons();
+}
+
+function toggleTextColorMode(){
+  const current = localStorage.getItem(TEXT_COLOR_KEY) || "normal";
+  const next = current === "colorblind" ? "normal" : "colorblind";
+  applyTextColorMode(next);
+}
+
+function updateAccessibilityButtons(){
+  const fontBtn = document.getElementById("font-size-toggle-btn");
+  const colorBtn = document.getElementById("text-color-toggle-btn");
+  const fontMode = localStorage.getItem(FONT_SIZE_KEY) || "normal";
+  const colorMode = localStorage.getItem(TEXT_COLOR_KEY) || "normal";
+
+  if(fontBtn){
+    const label = fontMode === "xlarge" ? "Extra Large" : (fontMode === "large" ? "Large" : "Normal");
+    fontBtn.innerHTML = `<span class="a11y-aaa-mark" aria-hidden="true">AAA</span>`;
+    fontBtn.title = `Text size: ${label}`;
+    fontBtn.setAttribute("aria-label", `Text Size: ${label}`);
+  }
+
+  if(colorBtn){
+    colorBtn.textContent = "♿️";
+    colorBtn.title = colorMode === "colorblind" ? "Text color: Color Blind" : "Text color: Normal";
+    colorBtn.setAttribute("aria-label", colorBtn.title);
+  }
+}
+
+function initTheme(){
+  const savedMode = localStorage.getItem(MODE_KEY);
+  if(savedMode === "light"){
+    document.body.classList.add("light-mode");
+  } else {
+    document.body.classList.remove("light-mode");
+  }
+
+  localStorage.removeItem(THEME_KEY);
+  applyTheme(getAutoTheme());
+}
+
+function initAccessibility(){
+  applyFontSize(localStorage.getItem(FONT_SIZE_KEY) || "normal");
+  applyTextColorMode(localStorage.getItem(TEXT_COLOR_KEY) || "normal");
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  initTheme();
+  initAccessibility();
+});
+</script>
+
+<script>
+(function(){
+  let _svcWarnTimer = null;
+  let _svcWarnDismissed = false;
+
+  window.dismissSvcWarnPopup = function(auto) {
+    clearInterval(_svcWarnTimer);
+    _svcWarnTimer = null;
+    const popup = document.getElementById("svc-warn-popup");
+    if (popup) popup.style.display = "none";
+    if (!auto) _svcWarnDismissed = true;
+  };
+
+  function showSvcWarnPopup() {
+    const popup = document.getElementById("svc-warn-popup");
+    if (!popup || popup.style.display !== "none" || _svcWarnDismissed) return;
+    popup.style.display = "block";
+    let secs = 40;
+    const cd = document.getElementById("svc-warn-countdown");
+    if (cd) cd.textContent = "Auto-dismiss in " + secs + "s";
+    _svcWarnTimer = setInterval(function() {
+      secs--;
+      if (cd) cd.textContent = "Auto-dismiss in " + secs + "s";
+      if (secs <= 0) window.dismissSvcWarnPopup(true);
+    }, 1000);
+  }
+
+  function pollSvc(){
+    fetch("/system/services")
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById("kp-light").style.color = d.klipper   ? "#22c55e" : "#ef4444";
+        document.getElementById("mk-light").style.color = d.moonraker ? "#22c55e" : "#ef4444";
+        if (d.klipper && d.moonraker) {
+          _svcWarnDismissed = false;
+          const popup = document.getElementById("svc-warn-popup");
+          if (popup && popup.style.display !== "none") window.dismissSvcWarnPopup(true);
+        } else {
+          showSvcWarnPopup();
+        }
+      })
+      .catch(() => {
+        document.getElementById("kp-light").style.color = "#ef4444";
+        document.getElementById("mk-light").style.color = "#ef4444";
+        showSvcWarnPopup();
+      });
+  }
+  pollSvc();
+  setInterval(pollSvc, 10000);
+})();
+</script>
+
+<div id="svc-warn-popup" style="display:none;position:fixed;bottom:80px;right:24px;z-index:10000;background:#7f1d1d;color:#fff;border-radius:10px;padding:16px 20px;max-width:360px;min-width:260px;box-shadow:0 4px 24px rgba(0,0,0,0.45);font-size:0.88em;line-height:1.6;">
+  <div>&#9888; <strong>Klipper or Moonraker is offline.</strong> Go to <strong>Troubleshooting</strong> at the bottom of this page and restart Kp&nbsp;/&nbsp;Mk, then wait for the indicator to turn green.</div>
+  <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+    <span id="svc-warn-countdown" style="font-size:0.78em;opacity:0.7;"></span>
+    <button onclick="dismissSvcWarnPopup(false)" style="border:none;background:rgba(255,255,255,0.18);color:#fff;padding:3px 14px;border-radius:6px;cursor:pointer;font-size:0.95em;">Dismiss</button>
+  </div>
+</div>
+
+<div id="run-end-popup" style="display:none;position:fixed;bottom:24px;right:24px;z-index:10000;background:#155799;color:#fff;border-radius:10px;padding:16px 20px;max-width:360px;min-width:260px;box-shadow:0 4px 24px rgba(0,0,0,0.45);font-size:0.88em;line-height:1.6;">
+  <div id="run-end-popup-msg"></div>
+  <div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">
+    <span id="run-end-popup-countdown" style="font-size:0.78em;opacity:0.7;"></span>
+    <button onclick="dismissRunEndPopup()" style="border:none;background:rgba(255,255,255,0.18);color:#fff;padding:3px 14px;border-radius:6px;cursor:pointer;font-size:0.95em;">Dismiss</button>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,15 @@
+[Unit]
+Description=Moonraker API Server
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi/moonraker
+ExecStart=/home/pi/klippy-env/bin/python3 /home/pi/moonraker/moonraker/moonraker.py -l /tmp/moonraker.log -c /home/pi/moonraker/moonraker.conf
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,135 @@
+# Licensing Overview
+
+This repository contains software, hardware designs, and documentation.
+Different components are licensed under different open-source licenses, as described below.
+
+Full license texts are provided in the corresponding LICENSE files in the repository root.
+
+---
+
+## 1. Software — MIT License
+
+All original software components in this repository are licensed under the MIT License.
+
+This includes, but is not limited to:
+
+- Python source code
+- Controller logic
+- Web UI code
+- Scripts
+- Configuration files
+- ONNX models
+- Supporting utilities
+
+See: `LICENSE-MIT`
+
+The MIT License permits use, modification, redistribution, and commercial use,
+provided that the copyright notice and license text are preserved.
+
+---
+
+## 2. Hardware Designs — CERN Open Hardware Licence v2 (Strongly Reciprocal)
+
+All original hardware design files are licensed under the
+CERN Open Hardware Licence Version 2 – Strongly Reciprocal (CERN-OHL-S v2).
+
+This includes, but is not limited to:
+
+- CAD files
+- STL files
+- Mechanical assemblies
+- Schematics
+- Wiring diagrams
+- PCB design files
+- Fabrication and assembly documentation located in the `hardware/` or `mechanical/` directories
+
+See: `LICENSE-CERN-OHL-S`
+
+CERN-OHL-S v2 requires that modified or redistributed hardware designs remain
+under the same license and that complete corresponding source design documentation
+be made available under CERN-OHL-S v2.
+
+---
+
+## 3. Documentation — Creative Commons Attribution 4.0 International (CC BY 4.0)
+
+All original documentation in this repository is licensed under the
+Creative Commons Attribution 4.0 International License (CC BY 4.0).
+
+This includes, unless otherwise specified:
+
+- README files
+- User guides
+- Assembly guides
+- Safety documentation
+- Markdown and PDF documentation
+- Images and screenshots created for this project
+
+See: `LICENSE-CC-BY-4.0`
+
+CC BY 4.0 permits sharing and adaptation for any purpose, including commercial use,
+provided appropriate attribution is given.
+
+---
+
+## 4. Third-Party Software and Components
+
+This project integrates or depends on third-party software and services.
+Those components remain licensed under their respective original licenses.
+
+Examples include, but are not limited to:
+
+- Klipper
+- Moonraker
+- Mainsail
+- PiCamera2
+- libcamera
+- Cloudflare services
+- Python packages listed in `requirements.txt` and `requirements-dev.txt`
+
+Third-party components are NOT re-licensed under this repository’s licenses.
+Users must comply with the original licenses of those components.
+
+Refer to:
+
+- `documentation/ Third_Party_Notices.md`
+- `documentation/model_provenance.md` (ONNX model provenance, checksums, and licensing details)
+- Individual third-party project documentation
+
+---
+
+## 5. No Warranty
+
+Unless required by applicable law, this project is provided "as is" without
+warranty of any kind.
+
+See the respective license files for full disclaimer language.
+
+---
+
+## 6. Academic Use and Citation
+
+Academic citation is encouraged when this project or derivative works are used
+in research publications, theses, preprints, or presentations.
+
+Citation is a scholarly expectation and is not a condition of the MIT,
+CERN-OHL-S v2, or CC BY 4.0 licenses unless explicitly required by those licenses.
+
+See `CITATION.cff` for recommended citation format.
+
+---
+
+## 7. Safety and Regulatory Responsibility
+
+This repository provides research automation tooling and hardware design documentation.
+It is not a certified laboratory instrument or safety-rated control system.
+
+Users are responsible for:
+
+- Electrical safety
+- Mechanical guarding
+- External emergency stop systems
+- Compliance with local laboratory, electrical, and regulatory requirements
+
+Licenses govern copyright and redistribution rights only.
+They do not replace safety engineering responsibilities or regulatory compliance obligations.

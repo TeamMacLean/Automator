@@ -1,0 +1,11 @@
+[Unit]
+Description=Run JPG cleanup every 3 days
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=3d
+Persistent=true
+Unit=cleanup-jpgs.service
+
+[Install]
+WantedBy=timers.target

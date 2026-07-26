@@ -1,0 +1,13 @@
+[Unit]
+Description=Klipper 3D Printer Firmware Host
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+ExecStart=/home/pi/klippy-env/bin/python3 /home/pi/klipper/klippy/klippy.py /home/pi/printer_data/config/printer.cfg -l /tmp/klippy.log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

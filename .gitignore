@@ -1,0 +1,47 @@
+# --- Virtual environments ---
+venv/
+venv_clean/
+venv_3.11/
+
+
+# --- Other git repositories inside Automator ---
+legacyautomator/
+reports/
+
+# --- Development folder excluded from Automator ---
+dev/
+dev2/.env
+dev2/.lgd-nfy0
+
+# --- Python cache files ---
+__pycache__/
+dev2/__pycache__/
+*.pyc
+*.pyo
+.python-version
+
+# --- Logs & temporary files ---
+*.log
+*.tmp
+
+# --- Ignore everything inside Automator/data ---
+data/*
+
+# --- But allow these specific files ---
+!data/best.onnx
+!data/bestnew.onnx
+!data/calibration.json
+
+# --- Raw runtime / generated data (specific files only) ---
+raw/controller.log
+raw/plates_db.json
+raw/plates_raw.json
+raw/petri_reid.db
+raw/controller_state.json
+
+# --- Data runtime index ---
+data/usb_camera_index.json
+
+# --- OS / editor files ---
+.DS_Store
+.vscode/

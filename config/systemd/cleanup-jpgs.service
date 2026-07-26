@@ -1,0 +1,6 @@
+[Unit]
+Description=Clean old JPG captures and dynamic folders
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /home/pi/Automator/dev2/cleanup_jpgs.py --delete

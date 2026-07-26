@@ -1,0 +1,28 @@
+[Unit]
+Description=Automator GPIO Button Listener
+After=network.target moonraker.service klipper.service
+Requires=moonraker.service klipper.service
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Automator/dev2
+
+# Placeholder only — set the real controller admin password in the deployed unit on the Pi.
+# Do NOT commit the real password to version control.
+Environment="AUTOMATOR_ADMIN_PASSWORD=****"
+Environment="PYTHONUNBUFFERED=1"
+
+# Give Moonraker + Klipper time to fully initialize
+ExecStartPre=/bin/sleep 5
+
+ExecStart=/home/pi/Automator/venv_clean/bin/python /home/pi/Automator/dev2/button_listener.py
+
+Restart=always
+RestartSec=2
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

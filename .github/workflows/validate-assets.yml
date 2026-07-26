@@ -1,0 +1,123 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025–2026 Rohan R
+
+name: Validate non-Python assets
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate-assets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # Shell scripts: documentation/*.sh
+      - name: Validate shell scripts (.sh) if any
+        run: |
+          set -e
+          files=$(find documentation -name "*.sh" -type f 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            echo "$files" | xargs -n1 bash -n
+          else
+            echo "No .sh files found."
+          fi
+
+      # JSON files: data/*.json
+      - name: Validate JSON files if any
+        run: |
+          set -e
+          files=$(find data -name "*.json" -type f 2>/dev/null || true)
+          if [ -n "$files" ]; then
+            echo "$files" | xargs -n1 python -m json.tool > /dev/null
+          else
+            echo "No .json files found."
+          fi
+
+      # Required data assets: ONNX model + calibration file
+      - name: Check required data assets (ONNX model + calibration)
+        run: |
+          set -e
+          required=(
+            "data/bestnew.onnx"
+            "data/calibration.json"
+          )
+
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "Missing required data asset: $f"
+              exit 1
+            fi
+          done
+
+          echo "All required data assets present."
+
+      # HTML files: dev2/templates/*.html
+      - name: Basic HTML parse check (dev2/templates)
+        run: |
+          python - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+
+          class P(HTMLParser):
+              def error(self, message):
+                  raise RuntimeError(message)
+
+          base = Path("dev2/templates")
+          if not base.exists():
+              raise SystemExit("Missing directory: dev2/templates")
+
+          files = list(base.glob("*.html"))
+          if not files:
+              raise SystemExit("No HTML files found in dev2/templates")
+
+          for p in files:
+              data = p.read_text(encoding="utf-8")
+              parser = P()
+              parser.feed(data)
+              parser.close()
+              print(f"HTML OK: {p}")
+          PY
+
+      # Markdown files: documentation/*.md + root/*.md
+      - name: Check Markdown files existence (documentation + root)
+        run: |
+          set -e
+          documentation_md=$(find documentation -name "*.md" -type f 2>/dev/null || true)
+          root_md=$(find . -maxdepth 1 -name "*.md" -type f 2>/dev/null || true)
+
+          if [ -n "$documentation_md" ] || [ -n "$root_md" ]; then
+            echo "Markdown files found:"
+            if [ -n "$documentation_md" ]; then
+              echo "$documentation_md"
+            fi
+            if [ -n "$root_md" ]; then
+              echo "$root_md"
+            fi
+          else
+            echo "No Markdown files found in documentation or repository root."
+          fi
+
+      # Required top-level files
+      - name: Check required top-level files
+        run: |
+          set -e
+          required=(
+            "LICENSE"
+            "requirements.txt"
+            "requirements-dev.txt"
+            "CITATION.cff"
+            "README.md"
+          )
+
+          for f in "${required[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "Missing required file: $f"
+              exit 1
+            fi
+          done
+
+          echo "All required top-level files present."

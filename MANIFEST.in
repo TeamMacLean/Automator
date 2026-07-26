@@ -1,0 +1,24 @@
+include package.md
+include setup.py
+include CITATION.cff
+include dev2/templates/index.html
+include dev2/templates/index_qr.html
+include dev2/templates/login.html
+recursive-include dev2/static *
+exclude dev2/main_mjpeg_server.py
+exclude dev2/maindiagnostics.py
+exclude dev2/qrtest.py
+exclude dev2/templates/diag_index.html
+recursive-exclude documentation *
+recursive-exclude config *
+recursive-exclude hardware *
+recursive-exclude mechanical *
+include data/calibration.json
+include raw/.gitkeep
+exclude README.md
+global-exclude *.onnx
+global-exclude *.stl
+global-exclude *.STL
+global-exclude .DS_Store
+prune dev2/__pycache__
+global-exclude *.pyc

@@ -1,0 +1,6 @@
+DEVICE             TYPE      STATE                   CONNECTION 
+wlan0              wifi      connected               IOT        
+lo                 loopback  connected (externally)  lo         
+38:E1:3D:B2:F5:67  bt        disconnected            --         
+p2p-dev-wlan0      wifi-p2p  disconnected            --         
+eth0               ethernet  unavailable             --         

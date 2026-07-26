@@ -1,0 +1,17 @@
+[connection]
+id=preconfigured
+uuid=e70013c7-5a59-4385-a157-2e4f6a428f69
+type=wifi
+[wifi]
+mode=infrastructure
+ssid=SHELL-4CB4D3
+hidden=false
+[ipv4]
+method=auto
+[ipv6]
+addr-gen-mode=default
+method=auto
+[proxy]
+[wifi-security]
+key-mgmt=wpa-psk
+psk=<REDACTED>

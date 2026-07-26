@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+IFACE="$1"
+STATUS="$2"
+
+if [ "$IFACE" != "eth0" ]; then
+  exit 0
+fi
+
+case "$STATUS" in
+  up|connectivity-change)
+    /usr/local/sbin/eth0-auto-switch.sh &
+    ;;
+esac
+
+exit 0

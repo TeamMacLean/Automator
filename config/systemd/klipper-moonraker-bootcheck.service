@@ -1,0 +1,12 @@
+[Unit]
+Description=Boot check: ensure Klipper and Moonraker are active
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/bin/klipper-moonraker-bootcheck.sh
+
+[Install]
+WantedBy=multi-user.target

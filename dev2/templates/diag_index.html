@@ -1,0 +1,231 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2025–2026 Rohan R -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Diagnostics Dashboard</title>
+
+  <!-- BOOTSTRAP -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
+  <!-- SOCKET.IO -->
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+  <style>
+    body { background-color:#0b0d0f; color:#e0e0e0; }
+    h3,h5 { color:#ffd54f; }
+    .card { background-color:#1b1e22; border:none; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.4); }
+    #log-box {
+        background:#121416;
+        border:1px solid #333;
+        color:#9effff;
+        font-family:monospace;
+        height:180px;
+        overflow-y:auto;
+        white-space:pre-line;
+        padding:5px;
+    }
+    #door-status.open { color:#ff4d4d; font-weight:bold; }
+    #door-status.closed { color:#00e676; font-weight:bold; }
+  </style>
+</head>
+
+<body>
+<div class="container-fluid p-4">
+
+  <!-- HEADER -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-warning">Diagnostics Dashboard</h3>
+
+    <div>
+      <button class="btn btn-primary btn-lg me-2" onclick="safeHome()">🏠 Safe Home</button>
+      <button id="stop-btn" class="btn btn-danger btn-lg" onclick="stopDiag()">🛑 Stop Diagnostics</button>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    <!-- LEFT PANEL -->
+    <div class="col-md-8">
+
+      <!-- CAMERA -->
+      <div class="card p-3">
+        <h5>USB Camera Preview</h5>
+
+        <img id="usb-preview"
+             src=""
+             class="img-fluid border border-secondary rounded mb-2"
+             style="max-height:400px;">
+      </div>
+
+      <!-- LOG -->
+      <div class="card p-3 mt-3">
+        <h5>System Log</h5>
+        <div id="log-box"></div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="col-md-4">
+
+      <div class="card p-3 mb-3">
+        <h5>Position Monitor</h5>
+        <table class="table table-sm table-dark table-striped text-center align-middle">
+          <thead>
+            <tr><th>Axis</th><th>Absolute</th><th>Relative</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>X</td><td id="abs-x">0.00</td><td id="rel-x">0.00</td></tr>
+            <tr><td>Y</td><td id="abs-y">0.00</td><td id="rel-y">0.00</td></tr>
+            <tr><td>Z</td><td id="abs-z">0.00</td><td id="rel-z">—</td></tr>
+            <tr><td>Vacuum</td><td id="vac-state">IDLE</td><td>—</td></tr>
+            <tr><td>Rotation</td><td id="rot-ang">0°</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card p-3">
+
+        <div class="mb-3">
+          <label class="fw-bold">Move Motors</label><br>
+          X: <input id="xval" type="number" value="0" class="form-control d-inline w-25">
+          <button class="btn btn-outline-light btn-sm" onclick="move('x')">Move</button><br>
+
+          Y: <input id="yval" type="number" value="0" class="form-control d-inline w-25">
+          <button class="btn btn-outline-light btn-sm" onclick="move('y')">Move</button><br>
+
+          Z: <input id="zval" type="number" value="0" class="form-control d-inline w-25">
+          <button class="btn btn-outline-light btn-sm" onclick="move('z')">Move</button>
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">Vacuum Control</label><br>
+          <button class="btn btn-outline-success btn-sm me-2" onclick="vac('suck_hold')">Suck + Hold</button>
+          <button class="btn btn-outline-warning btn-sm me-2" onclick="vac('hold')">Hold</button>
+          <button class="btn btn-outline-danger btn-sm" onclick="vac('release')">Release</button>
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">Rotation Servo</label><br>
+          <button class="btn btn-outline-light btn-sm me-2" onclick="rotateServo(0)">0°</button>
+          <button class="btn btn-outline-light btn-sm me-2" onclick="rotateServo(45)">45°</button>
+          <button class="btn btn-outline-light btn-sm" onclick="rotateServo(90)">90°</button>
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">LED</label><br>
+          <button class="btn btn-outline-warning btn-sm" onclick="led('on')">On</button>
+          <button class="btn btn-outline-secondary btn-sm" onclick="led('off')">Off</button>
+        </div>
+
+        <div class="mb-3">
+          <label class="fw-bold">Door Sensor</label><br>
+          <button class="btn btn-outline-info btn-sm" onclick="checkDoor()">Check Door</button>
+          <span id="door-status" class="ms-2">--</span>
+        </div>
+
+        <div class="mb-2">
+          <label class="fw-bold text-warning">Reset Position Monitor</label><br>
+          <button class="btn btn-outline-danger btn-sm" onclick="resetPosition()">🔁 Reset All</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="footer mt-4">
+    Developed by
+    <a href="https://www.tsl.ac.uk/about/people/rohan-rebello"
+       target="_blank"
+       class="text-warning fw-bold">Rohan @ TSL</a>
+  </div>
+
+</div>
+
+<!-- ========================================================= -->
+<!--                    JAVASCRIPT SECTION                     -->
+<!-- ========================================================= -->
+<script>
+const socket = io();
+
+// ---------------------------
+// AUTO-SELECT MJPEG STREAM
+// ---------------------------
+window.addEventListener("DOMContentLoaded", () => {
+    const host = window.location.hostname;
+    const streamURL = "http://" + host + ":9000/stream";
+
+    console.log("MJPEG Source:", streamURL);
+
+    const img = document.getElementById("usb-preview");
+    if (img) img.src = streamURL;
+});
+
+// ----------------- LOG ------------------
+socket.on("log", d => {
+  const box = document.getElementById("log-box");
+  box.textContent += d.msg + "\n";
+  box.scrollTop = box.scrollHeight;
+});
+
+// ----------------- POSITION ------------------
+socket.on("position", d => {
+  document.getElementById("abs-x").textContent = d.abs.x.toFixed(2);
+  document.getElementById("abs-y").textContent = d.abs.y.toFixed(2);
+  document.getElementById("abs-z").textContent = d.abs.z.toFixed(2);
+
+  document.getElementById("rel-x").textContent = d.rel.x.toFixed(2);
+  document.getElementById("rel-y").textContent = d.rel.y.toFixed(2);
+
+  document.getElementById("vac-state").textContent = d.abs.vacuum;
+  document.getElementById("rot-ang").textContent = d.abs.rotate + "°";
+});
+
+// ----------------- DOOR SENSOR ------------------
+socket.on("door", d => {
+  const el = document.getElementById("door-status");
+  el.textContent = d.status;
+  el.className = d.status.includes("Open") ? "open" : "closed";
+});
+
+// ----------------- COMMAND FUNCTIONS ------------------
+function checkDoor(){ fetch("/door"); }
+function safeHome(){ fetch("/safe_home",{method:"POST"}); }
+let stopRequested = false;
+function stopDiag(){
+  if(stopRequested) return;
+  if(!confirm("Stop diagnostics?")) return;
+  stopRequested = true;
+  const btn = document.getElementById("stop-btn");
+  if(btn){
+    btn.disabled = true;
+    btn.textContent = "Stopping...";
+  }
+  fetch("/stop").finally(()=>{
+    setTimeout(()=>{ window.location.href = "/"; }, 800);
+  });
+}
+
+function move(axis){
+  const val = parseFloat(document.getElementById(axis+'val').value);
+  fetch("/move",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({[axis]:val})});
+}
+
+function vac(action){
+  fetch("/vacuum",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action})});
+}
+
+function rotateServo(angle){
+  fetch("/rotate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({angle})});
+}
+
+function led(s){ fetch("/led/"+s); }
+function resetPosition(){ fetch("/reset_position",{method:"POST"}); }
+
+</script>
+
+</body>
+</html>

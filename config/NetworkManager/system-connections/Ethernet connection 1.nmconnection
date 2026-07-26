@@ -1,0 +1,24 @@
+[connection]
+id=Instrument connection 
+uuid=c3612a53-4d0a-4587-b00c-6f6eaaef9f04
+type=ethernet
+autoconnect-priority=100
+interface-name=eth0
+timestamp=1781177561
+
+[ethernet]
+mac-address=2C:CF:67:8E:B5:A9
+
+[ipv4]
+address1=10.0.8.72/24
+dns=10.0.8.1;
+method=manual
+route-metric=800
+route1=149.155.211.0/24,10.0.8.1
+route2=10.0.0.170/32,10.0.8.1
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=disabled
+
+[proxy]

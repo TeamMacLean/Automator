@@ -1,0 +1,23 @@
+[Unit]
+Description=Export Automator capture images to USB partition %I
+Documentation=man:systemd.service(5)
+After=systemd-udevd.service local-fs.target
+Wants=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/export-images-to-usb.sh %I
+TimeoutStartSec=30min
+
+User=root
+Group=root
+
+StandardOutput=journal
+StandardError=journal
+
+# Basic hardening that should not break mount namespaces.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

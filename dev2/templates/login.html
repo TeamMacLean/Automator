@@ -1,0 +1,34 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2025–2026 Rohan R -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Diagnostics Login</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body { background:#0b0c10; color:#c5c6c7; display:flex; justify-content:center; align-items:center; height:100vh; }
+.card { background:#1f2833; border:1px solid #45a29e; border-radius:10px; width:320px; padding:20px; }
+.btn-custom { background:#45a29e; border:none; color:#0b0c10; font-weight:bold; width:100%; }
+h4 { color:#66fcf1; text-align:center; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h4>Diagnostics Login</h4>
+  <form method="POST">
+    <div class="mb-3">
+      <label>Username</label>
+      <input type="text" name="username" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label>Password</label>
+      <input type="password" name="password" class="form-control" required>
+    </div>
+    {% if error %}<div class="text-danger mb-2">{{ error }}</div>{% endif %}
+    <button type="submit" class="btn btn-custom">Login</button>
+  </form>
+</div>
+</body>
+</html>

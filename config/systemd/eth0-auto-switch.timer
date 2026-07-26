@@ -1,0 +1,11 @@
+[Unit]
+Description=Run eth0 auto switch periodically
+
+[Timer]
+OnBootSec=20
+OnUnitActiveSec=15
+AccuracySec=5
+Unit=eth0-auto-switch.service
+
+[Install]
+WantedBy=timers.target

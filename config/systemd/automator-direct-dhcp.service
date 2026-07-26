@@ -1,0 +1,12 @@
+[Unit]
+Description=Direct MacBook DHCP server for Automator eth0
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dnsmasq --no-daemon --conf-file=/etc/dnsmasq.d/automator-direct-eth0.conf
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

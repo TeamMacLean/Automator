@@ -1,0 +1,11 @@
+[Unit]
+Description=Auto switch eth0 between Institute LAN and direct MacBook mode
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/eth0-auto-switch.sh
+
+[Install]
+WantedBy=multi-user.target

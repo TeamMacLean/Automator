@@ -1,0 +1,806 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Copyright (c) 2025–2026 Rohan R -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR Generator</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+/* ---------- BASE ---------- */
+body {
+  background: #1e1e1e;
+  color: #eee;
+}
+
+:root {
+  --a11y-font-scale: 1;
+}
+
+html {
+  font-size: calc(16px * var(--a11y-font-scale));
+}
+
+.a11y-aaa-mark {
+  display:inline-block;
+  font-weight:700;
+  letter-spacing:0.04em;
+  margin-right:0;
+  font-size:0.85em;
+}
+
+.a11y-icon-btn {
+  min-width:2rem;
+  padding:0.2rem 0.35rem !important;
+  line-height:1 !important;
+  text-align:center;
+}
+
+h3 {
+  color: #00aaff;
+}
+
+/* ---------- GRID ---------- */
+#qr-strip {
+  display: grid;
+  gap: 28px;
+  justify-items: center;
+}
+
+@media (max-width: 575px) {
+  #qr-strip { grid-template-columns: 1fr; }
+}
+
+@media (min-width: 576px) and (max-width: 991px) {
+  #qr-strip { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 992px) {
+  #qr-strip { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ---------- QR CARD ---------- */
+.qr-card {
+  width: 200px;
+  background: #2a2a2a;
+  padding: 14px;
+  border-radius: 6px;
+  text-align: center;
+  position: relative;
+}
+
+.qr-card img {
+  width: 150px;
+  height: 150px;
+  background: #fff;
+  padding: 4px;
+}
+
+.qr-subtitle {
+  font-size: 14px;
+  margin-top: 10px;
+  color: #ccc;
+  word-break: break-word;
+}
+
+.form-block {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.half-field {
+  max-width: 50%;
+}
+
+.custom-entry-disabled {
+  background:#e9ecef !important;
+  color:#6c757d !important;
+  cursor:not-allowed;
+}
+
+.orientation-help-image {
+  max-width:420px;
+  border:2px solid #555;
+  border-radius:8px;
+}
+
+@media (max-width: 767px) {
+  .half-field {
+    max-width: 100%;
+  }
+}
+
+</style>
+
+<!-- THEME CSS -->
+<style>
+  :root {
+    --theme-body-bg: #1e1e1e;
+    --theme-text: #eee;
+    --theme-title: #00aaff;
+    --theme-subtitle: #16c172;
+    --theme-panel-bg: #2a2a2a;
+    --theme-panel-border: #3a3a3a;
+    --theme-card-bg: #2a2a2a;
+    --theme-card-sub: #ccc;
+    --theme-input-bg: #ffffff;
+    --theme-input-text: #212529;
+    --theme-input-border: #ced4da;
+    --theme-hr: #4a4a4a;
+  }
+
+  body {
+    background: var(--theme-body-bg) !important;
+    color: var(--theme-text) !important;
+  }
+
+  body.a11y-colorblind {
+    --a11y-cb-text: #111;
+    --a11y-cb-link: #0b4f8a;
+  }
+
+  body.a11y-colorblind:not(.light-mode) {
+    --a11y-cb-text: #f5f5f5;
+    --a11y-cb-link: #9ecbff;
+  }
+
+  body.a11y-colorblind {
+    --theme-text: var(--a11y-cb-text) !important;
+    --theme-subtitle: var(--a11y-cb-text) !important;
+    --theme-log-text: var(--a11y-cb-text) !important;
+    --theme-link: var(--a11y-cb-link) !important;
+  }
+
+  body.a11y-colorblind .text-info,
+  body.a11y-colorblind .text-warning,
+  body.a11y-colorblind .text-danger,
+  body.a11y-colorblind .text-success,
+  body.a11y-colorblind .text-primary,
+  body.a11y-colorblind .text-secondary,
+  body.a11y-colorblind .text-muted {
+    color: var(--a11y-cb-text) !important;
+  }
+
+  h3 { color: var(--theme-title) !important; }
+  .text-success { color: var(--theme-subtitle) !important; }
+
+  .form-block {
+    background: var(--theme-panel-bg) !important;
+    border-color: var(--theme-panel-border) !important;
+  }
+
+  .qr-card {
+    background: var(--theme-card-bg) !important;
+  }
+
+  .qr-subtitle {
+    color: var(--theme-card-sub) !important;
+  }
+
+  .form-control,
+  .form-select {
+    background: var(--theme-input-bg) !important;
+    color: var(--theme-input-text) !important;
+    border-color: var(--theme-input-border) !important;
+  }
+
+  hr {
+    border-color: var(--theme-hr) !important;
+    opacity: 1 !important;
+  }
+
+  #theme-controls-qr {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 2000;
+    display: flex;
+    gap: 6px;
+  }
+
+  #theme-controls-qr .btn {
+    font-size: 12px;
+    line-height: 1.25;
+    padding: 3px 8px;
+  }
+
+  body.light-mode {
+    --theme-body-bg: #eef3fb;
+    --theme-text: #1f2937;
+    --theme-title: #1f5f9e;
+    --theme-subtitle: #2e8b57;
+    --theme-panel-bg: #ffffff;
+    --theme-panel-border: #bfd0e6;
+    --theme-card-bg: #ffffff;
+    --theme-card-sub: #4b5563;
+    --theme-input-bg: #ffffff;
+    --theme-input-text: #1f2937;
+    --theme-input-border: #b6c8de;
+    --theme-hr: #b8c7d9;
+  }
+
+#service-status-bar {
+  text-align: center;
+  padding: 4px 0 6px;
+  font-size: 12px;
+  letter-spacing: 6px;
+}
+</style>
+
+</head>
+<body>
+
+
+<div class="container mt-4">
+  <!-- MODE BUTTON -->
+  <div id="theme-controls-qr">
+    <button id="mode-toggle-btn" type="button" class="btn btn-outline-light btn-sm" onclick="toggleMode()">Mode: Dark</button>
+    <button id="font-size-toggle-btn" type="button" class="btn btn-outline-light btn-sm a11y-icon-btn" onclick="cycleFontSize()">AAA</button>
+    <button id="text-color-toggle-btn" type="button" class="btn btn-outline-light btn-sm a11y-icon-btn" onclick="toggleTextColorMode()">♿️</button>
+  </div>
+
+  <!-- TITLE -->
+  <h3 class="text-center mb-2">QR Generator for Petri Dishes</h3>
+
+  <!-- ================= FORM ================= -->
+
+  <h5 class="mb-3">QR Generator</h5>
+  <ol class="mb-2 text-info fw-bold">
+    <li>Fill Strain, Media, Condition, and Plate Orientation</li>
+    <li>Click Add QR to List</li>
+    <li>Repeat for multiple plates</li>
+    <li>Click Download PDF Sheet</li>
+    <li>Open the downloaded PDF on your computer and print it using an available printer</li>
+  </ol>
+  <p class="mb-3 text-info fw-bold">Format: date_strain_media_condition_orientation</p>
+
+  <div class="row g-3 mb-4">
+    <div class="col-12">
+      <div class="form-block h-100">
+        <h6 class="text-warning fw-bold mb-3">Step 1 — Enter Basic Experimental Details(Choose either from drop Down or Enter custom details)</h6>
+
+        <input id="date" type="hidden">
+
+        <div class="mb-3">
+          <label class="form-label">Strain</label>
+          <select id="strain-select" class="form-select half-field">
+            <option value="">Select strain</option>
+            <option value="WT">WT</option>
+            <option value="sln1">sln1</option>
+            <option value="pbs2">pbs2</option>
+            <option value="ssk1">ssk1</option>
+            <option value="ssk2">ssk2</option>
+            <option value="sho1">sho1</option>
+          </select>
+          <div class="small text-info mt-1">OR type custom strain:</div>
+          <input id="strain-custom" class="form-control half-field mt-1" placeholder="Custom strain">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Media</label>
+          <select id="media-select" class="form-select half-field">
+            <option value="">Select media</option>
+            <option value="PCBM">PCBM</option>
+            <option value="OMA">OMA</option>
+            <option value="WBA">WBA</option>
+            <option value="CM">CM</option>
+            <option value="PDA">PDA</option>
+          </select>
+          <div class="small text-info mt-1">OR type custom media:</div>
+          <input id="media-custom" class="form-control half-field mt-1" placeholder="Custom media">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Condition</label>
+          <select id="condition-select" class="form-select half-field">
+            <option value="">Select condition</option>
+            <option value="CTRL">CTRL</option>
+            <option value="0.4_M_NaCl">0.4_M_NaCl</option>
+            <option value="1.0_M_sorbitol">1.0_M_sorbitol</option>
+            <option value="minimal_medium">minimal_medium</option>
+            <option value="NACL">NACL</option>
+            <option value="-NACL">-NACL</option>
+          </select>
+          <div class="small text-info mt-1">OR type custom condition:</div>
+          <input id="condition-custom" class="form-control half-field mt-1" placeholder="Custom condition">
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label d-flex align-items-center gap-2">
+            Plate Orientation
+            <button
+              type="button"
+              class="btn btn-sm btn-outline-secondary py-0 px-2"
+              onclick="toggleOrientationHelp()">
+              ?
+            </button>
+          </label>
+          <div class="d-flex flex-wrap gap-4">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="orientation" id="orientation-td" value="TD">
+              <label class="form-check-label" for="orientation-td">TD (Top Down)</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="orientation" id="orientation-bd" value="BD">
+              <label class="form-check-label" for="orientation-bd">BD (Bottom Down)</label>
+            </div>
+          </div>
+          <div id="orientation-help" class="mt-2" style="display:none;">
+            <img
+              src="/static/Orientation.jpg"
+              alt="Plate orientation reference: Top Down and Bottom Down"
+              class="img-fluid orientation-help-image">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="mb-4 d-flex flex-wrap gap-2">
+    <button class="btn btn-info flex-grow-1" onclick="addQR()">
+      2. Add QR to List
+    </button>
+    <button class="btn btn-outline-secondary" onclick="clearForm()">
+      Clear All
+    </button>
+  </div>
+
+
+  <!-- QR PREVIEW -->
+  <div id="qr-strip"></div>
+  <div class="mt-3 mb-4">
+    <button
+      class="btn btn-success w-100"
+      id="print-btn"
+      onclick="printAll()"
+      disabled>
+      3. Download PDF Sheet
+    </button>
+  </div>
+
+
+  <p class="mt-3 mb-2 text-warning fw-bold">4. Print the downloaded QR PDF from your computer, place Petri dishes with QR code inside Automator, and <span class="text-info">click Proceed to Imaging system below</span>.</p>
+
+  <!-- PROCEED -->
+  <button
+    class="btn btn-lg btn-warning w-100 mt-3"
+    id="proceed-btn"
+    onclick="goMain()">
+
+    Proceed to Imaging System →
+  </button>
+
+</div>
+
+
+
+<script>
+
+function getCsrfToken(){
+  return document.querySelector('meta[name="csrf-token"]').content;
+}
+
+/* ---------- LIMIT ---------- */
+
+const MAX_QR = 20;
+
+const qrFiles = [];
+const qrTexts = [];
+
+
+/* ---------- AUTO DATE (YYYYMMDD) ---------- */
+
+function setTodayYYYYMMDD() {
+  const d = new Date();
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+
+  const today = `${yyyy}${mm}${dd}`;
+  document.getElementById("date").value = today;
+}
+
+function updateActionButtons() {
+  const hasQR = qrTexts.length > 0;
+  document.getElementById("print-btn").disabled = !hasQR;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  setTodayYYYYMMDD();
+  initBasicDetailLocks();
+  updateActionButtons();
+});
+
+
+/* ---------- BUILD PAYLOAD ---------- */
+
+function getStrain() {
+  const custom = document.getElementById("strain-custom").value.trim();
+  if (custom) return custom;
+  return document.getElementById("strain-select").value.trim();
+}
+
+function getMedia() {
+  const custom = document.getElementById("media-custom").value.trim();
+  if (custom) return custom;
+  return document.getElementById("media-select").value.trim();
+}
+
+function getCondition() {
+  const custom = document.getElementById("condition-custom").value.trim();
+  if (custom) return custom;
+  return document.getElementById("condition-select").value.trim();
+}
+
+function toggleOrientationHelp() {
+  const help = document.getElementById("orientation-help");
+  if (!help) return;
+  help.style.display = help.style.display === "none" ? "block" : "none";
+}
+
+const BASIC_DETAIL_PAIRS = [
+  ["strain-select", "strain-custom"],
+  ["media-select", "media-custom"],
+  ["condition-select", "condition-custom"]
+];
+
+function applyBasicDetailLock(selectId, customId) {
+  const selectEl = document.getElementById(selectId);
+  const customEl = document.getElementById(customId);
+  if (!selectEl || !customEl) return;
+
+  const hasCustom = customEl.value.trim() !== "";
+  const hasSelect = selectEl.value.trim() !== "";
+
+  if (hasCustom) {
+    selectEl.disabled = true;
+    customEl.disabled = false;
+    customEl.classList.remove("custom-entry-disabled");
+    return;
+  }
+
+  selectEl.disabled = false;
+  if (hasSelect) {
+    customEl.value = "";
+    customEl.disabled = true;
+    customEl.classList.add("custom-entry-disabled");
+  } else {
+    customEl.disabled = false;
+    customEl.classList.remove("custom-entry-disabled");
+  }
+}
+
+function initBasicDetailLocks() {
+  BASIC_DETAIL_PAIRS.forEach(([selectId, customId]) => {
+    const selectEl = document.getElementById(selectId);
+    const customEl = document.getElementById(customId);
+    if (!selectEl || !customEl) return;
+
+    selectEl.addEventListener("change", () => applyBasicDetailLock(selectId, customId));
+    customEl.addEventListener("input", () => applyBasicDetailLock(selectId, customId));
+    applyBasicDetailLock(selectId, customId);
+  });
+}
+
+function clearForm() {
+  document.getElementById("strain-select").value = "";
+  document.getElementById("strain-custom").value = "";
+  document.getElementById("media-select").value = "";
+  document.getElementById("media-custom").value = "";
+  document.getElementById("condition-select").value = "";
+  document.getElementById("condition-custom").value = "";
+  document.querySelectorAll('input[name="orientation"]').forEach(el => {
+    el.checked = false;
+  });
+  const help = document.getElementById("orientation-help");
+  if (help) help.style.display = "none";
+  BASIC_DETAIL_PAIRS.forEach(([selectId, customId]) => applyBasicDetailLock(selectId, customId));
+  setTodayYYYYMMDD();
+}
+
+function buildPayload() {
+  const date = document.getElementById("date").value;
+  const strain = getStrain();
+  const media = getMedia();
+  const condition = getCondition();
+  const selected = document.querySelector('input[name="orientation"]:checked');
+  const orientation = selected ? selected.value : "";
+
+  if (!date || !strain || !media || !condition || !orientation) {
+    alert("Please fill Strain, Media, Condition, and Plate Orientation.");
+    return null;
+  }
+
+  return `${date}_${strain}_${media}_${condition}_${orientation}`;
+}
+
+
+/* ---------- ADD QR ---------- */
+
+function addQR() {
+
+  const payload = buildPayload();
+
+  if (!payload) return;
+
+  if (qrTexts.length === MAX_QR) {
+    alert("A4 sheet full.");
+    return;
+  }
+
+  fetch("/qr/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrfToken() },
+    body: JSON.stringify({ payload })
+  })
+  .then(r => r.blob())
+  .then(blob => {
+
+    qrFiles.push(URL.createObjectURL(blob));
+    qrTexts.push(payload);
+
+    renderStrip();
+    updateActionButtons();
+  });
+}
+
+
+/* ---------- RENDER ---------- */
+
+function renderStrip() {
+
+  const box = document.getElementById("qr-strip");
+
+  box.innerHTML = "";
+
+  qrFiles.forEach((url, i) => {
+
+    const card = document.createElement("div");
+    card.className = "qr-card";
+
+    const img = document.createElement("img");
+    img.src = url;
+
+    const sub = document.createElement("div");
+    sub.className = "qr-subtitle";
+    sub.textContent = qrTexts[i];
+
+    const controls = document.createElement("div");
+    controls.className = "mt-2 d-flex justify-content-center gap-2";
+
+    const printBtn = document.createElement("button");
+    printBtn.className = "btn btn-sm btn-outline-info";
+    printBtn.textContent = "Download this QR PDF";
+    printBtn.onclick = () => printSingleQR(i);
+
+    const clearBtn = document.createElement("button");
+    clearBtn.className = "btn btn-sm btn-outline-danger";
+    clearBtn.textContent = "Clear";
+    clearBtn.onclick = () => removeQR(i);
+
+    controls.appendChild(printBtn);
+    controls.appendChild(clearBtn);
+
+    card.appendChild(img);
+    card.appendChild(sub);
+    card.appendChild(controls);
+
+    box.appendChild(card);
+  });
+}
+
+
+/* ---------- PDF DOWNLOAD ---------- */
+
+function downloadQrPdf(payloads, filename) {
+  fetch("/qr/print_sheet", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCsrfToken() },
+    body: JSON.stringify({ payloads })
+  })
+  .then(async r => {
+    if (!r.ok) {
+      let msg = "PDF generation failed.";
+      try {
+        const err = await r.json();
+        if (err && err.error) msg = err.error;
+      } catch (_) {}
+      throw new Error(msg);
+    }
+    return r.blob();
+  })
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "automator_qr_sheet.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  })
+  .catch(err => {
+    alert(err.message || "PDF download failed.");
+  });
+}
+
+function printSingleQR(index) {
+  if (index < 0 || index >= qrTexts.length) return;
+  downloadQrPdf([qrTexts[index]], "automator_qr_single.pdf");
+}
+
+function removeQR(index) {
+  if (index < 0 || index >= qrFiles.length) return;
+  URL.revokeObjectURL(qrFiles[index]);
+  qrFiles.splice(index, 1);
+  qrTexts.splice(index, 1);
+  renderStrip();
+  updateActionButtons();
+}
+
+function printAll() {
+  if (!qrTexts.length) {
+    alert("No QR codes to download.");
+    return;
+  }
+
+  downloadQrPdf(qrTexts, "automator_qr_sheet.pdf");
+}
+
+
+function goMain() {
+  window.location.assign(new URL("/main", window.location.href).toString());
+}
+
+</script>
+
+<!-- THEME ENGINE SCRIPT -->
+<script>
+const MODE_KEY = "automator_mode";
+const FONT_SIZE_KEY = "automator_font_size";
+const TEXT_COLOR_KEY = "automator_text_color";
+const FONT_SIZE_ORDER = ["normal", "large", "xlarge"];
+
+function toggleMode(){
+  const willBeLight = !document.body.classList.contains("light-mode");
+  if (willBeLight) {
+    document.body.classList.add("light-mode");
+    localStorage.setItem(MODE_KEY, "light");
+  } else {
+    document.body.classList.remove("light-mode");
+    localStorage.setItem(MODE_KEY, "dark");
+  }
+  updateThemeButtons();
+}
+
+function updateThemeButtons(){
+  const modeBtn = document.getElementById("mode-toggle-btn");
+  const isLight = document.body.classList.contains("light-mode");
+
+  if (modeBtn) {
+    modeBtn.textContent = isLight ? "Mode: Light" : "Mode: Dark";
+    modeBtn.classList.remove("btn-outline-light", "btn-outline-dark");
+    modeBtn.classList.add(isLight ? "btn-outline-dark" : "btn-outline-light");
+  }
+
+  updateAccessibilityButtons();
+}
+
+function applyFontSize(mode){
+  const safeMode = FONT_SIZE_ORDER.includes(mode) ? mode : "normal";
+  const rootScale = safeMode === "xlarge" ? "1.25" : (safeMode === "large" ? "1.125" : "1");
+  document.documentElement.style.setProperty("--a11y-font-scale", rootScale);
+  localStorage.setItem(FONT_SIZE_KEY, safeMode);
+  updateAccessibilityButtons();
+}
+
+function cycleFontSize(){
+  const current = localStorage.getItem(FONT_SIZE_KEY) || "normal";
+  const idx = FONT_SIZE_ORDER.indexOf(current);
+  const next = FONT_SIZE_ORDER[(idx + 1) % FONT_SIZE_ORDER.length];
+  applyFontSize(next);
+}
+
+function applyTextColorMode(mode){
+  const safeMode = mode === "colorblind" ? "colorblind" : "normal";
+  document.body.classList.toggle("a11y-colorblind", safeMode === "colorblind");
+  localStorage.setItem(TEXT_COLOR_KEY, safeMode);
+  updateAccessibilityButtons();
+}
+
+function toggleTextColorMode(){
+  const current = localStorage.getItem(TEXT_COLOR_KEY) || "normal";
+  const next = current === "colorblind" ? "normal" : "colorblind";
+  applyTextColorMode(next);
+}
+
+function updateAccessibilityButtons(){
+  const fontBtn = document.getElementById("font-size-toggle-btn");
+  const colorBtn = document.getElementById("text-color-toggle-btn");
+  const fontMode = localStorage.getItem(FONT_SIZE_KEY) || "normal";
+  const colorMode = localStorage.getItem(TEXT_COLOR_KEY) || "normal";
+
+  if (fontBtn) {
+    const label = fontMode === "xlarge" ? "Extra Large" : (fontMode === "large" ? "Large" : "Normal");
+    fontBtn.innerHTML = `<span class="a11y-aaa-mark" aria-hidden="true">AAA</span>`;
+    fontBtn.title = `Text size: ${label}`;
+    fontBtn.setAttribute("aria-label", `Text Size: ${label}`);
+  }
+
+  if (colorBtn) {
+    colorBtn.textContent = "♿️";
+    colorBtn.title = colorMode === "colorblind" ? "Text color: Color Blind" : "Text color: Normal";
+    colorBtn.setAttribute("aria-label", colorBtn.title);
+  }
+}
+
+function positionThemeControls(){
+  const controls = document.getElementById("theme-controls-qr");
+  const container = document.querySelector(".container.mt-4");
+  if (!controls || !container) return;
+
+  const rect = container.getBoundingClientRect();
+  controls.style.top = `${Math.max(8, rect.top + 8)}px`;
+  controls.style.left = `${Math.max(8, rect.right - controls.offsetWidth - 8)}px`;
+  controls.style.right = "auto";
+}
+
+function initTheme(){
+  const mode = localStorage.getItem(MODE_KEY);
+  if (mode === "light") {
+    document.body.classList.add("light-mode");
+  } else {
+    document.body.classList.remove("light-mode");
+  }
+
+  updateThemeButtons();
+  positionThemeControls();
+}
+
+function initAccessibility(){
+  applyFontSize(localStorage.getItem(FONT_SIZE_KEY) || "normal");
+  applyTextColorMode(localStorage.getItem(TEXT_COLOR_KEY) || "normal");
+}
+
+document.addEventListener("DOMContentLoaded", initTheme);
+document.addEventListener("DOMContentLoaded", initAccessibility);
+window.addEventListener("resize", positionThemeControls);
+</script>
+
+<div id="service-status-bar">
+  <span id="kp-light" title="Klipper">&#9679; Kp</span>
+  <span id="mk-light" title="Moonraker">&#9679; Mk</span>
+</div>
+
+<script>
+(function(){
+  function pollSvc(){
+    fetch("/system/services")
+      .then(r => r.json())
+      .then(d => {
+        document.getElementById("kp-light").style.color = d.klipper   ? "#22c55e" : "#ef4444";
+        document.getElementById("mk-light").style.color = d.moonraker ? "#22c55e" : "#ef4444";
+      })
+      .catch(() => {
+        document.getElementById("kp-light").style.color = "#ef4444";
+        document.getElementById("mk-light").style.color = "#ef4444";
+      });
+  }
+  pollSvc();
+  setInterval(pollSvc, 10000);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+# LEGACY — superseded by automator-controller.service
+# Kept for reference only. Do not enable or use on the deployed Pi.
+[Unit]
+Description=Automator Controller (legacy — use automator-controller.service)
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/Automator/dev2
+
+# 🔐 Inject password securely (in memory only)
+Environment="AUTOMATOR_ADMIN_PASSWORD=<REDACTED>"
+
+# ------------------------------------------------------------------
+ExecStart=/home/pi/Automator/venv_clean/bin/python maincontroller.py
+
+Restart=no
+
+# ------------------------------------------------------------------
+
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

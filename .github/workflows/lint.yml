@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025–2026 Rohan R
+
+name: Lint (Ruff + Black)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+
+      - name: Install lint tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black
+
+      - name: Ruff (static checks)
+        continue-on-error: true
+        run: |
+          ruff check \
+            dev2/__init__.py \
+            dev2/button_listener.py \
+            dev2/calibration.py \
+            dev2/cleanup_jpgs.py \
+            dev2/doorsense.py \
+            dev2/fetch_model.py \
+            dev2/led.py \
+            dev2/main_mjpeg_server.py \
+            dev2/maincontroller.py \
+            dev2/maindiagnostics.py \
+            dev2/maingcodesender.py \
+            dev2/mainusbcamera.py \
+            dev2/qrtest.py \
+            dev2/raspberry_camera.py
+
+      - name: Black (format check only)
+        continue-on-error: true
+        run: |
+          black --check \
+            dev2/__init__.py \
+            dev2/button_listener.py \
+            dev2/calibration.py \
+            dev2/cleanup_jpgs.py \
+            dev2/doorsense.py \
+            dev2/fetch_model.py \
+            dev2/led.py \
+            dev2/main_mjpeg_server.py \
+            dev2/maincontroller.py \
+            dev2/maindiagnostics.py \
+            dev2/maingcodesender.py \
+            dev2/mainusbcamera.py \
+            dev2/qrtest.py \
+            dev2/raspberry_camera.py

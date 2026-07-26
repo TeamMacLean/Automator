@@ -1,0 +1,78 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025–2026 Rohan R
+
+name: CI – Python sanity checks (no hardware)
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+jobs:
+  python-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
+
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+
+      # Your requirements include Pi-only packages (picamera2, RPi.GPIO, gpiozero).
+      # On ubuntu-latest these typically fail to install, so we filter them out for CI.
+      - name: Install CI-safe dependencies (filtered)
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          req = Path("requirements.txt")
+          if not req.exists():
+            print("No requirements.txt found; skipping install.")
+            raise SystemExit(0)
+
+          skip = {
+            "picamera2",
+            "RPi.GPIO",
+            "gpiozero",
+          }
+
+          out = []
+          for line in req.read_text().splitlines():
+            s = line.strip()
+            if not s or s.startswith("#"):
+              continue
+            name = s.split("==")[0].strip()
+            if name in skip:
+              print(f"CI skip: {s}")
+              continue
+            out.append(s)
+
+          Path("requirements.ci.txt").write_text("\n".join(out) + "\n")
+          print("Wrote requirements.ci.txt")
+          PY
+
+          pip install -r requirements.ci.txt
+
+      - name: Compile (syntax check only; no execution)
+        run: |
+          python -m compileall \
+            dev2/__init__.py \
+            dev2/button_listener.py \
+            dev2/calibration.py \
+            dev2/cleanup_jpgs.py \
+            dev2/doorsense.py \
+            dev2/fetch_model.py \
+            dev2/led.py \
+            dev2/main_mjpeg_server.py \
+            dev2/maincontroller.py \
+            dev2/maindiagnostics.py \
+            dev2/maingcodesender.py \
+            dev2/mainusbcamera.py \
+            dev2/qrtest.py \
+            dev2/raspberry_camera.py
