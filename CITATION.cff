@@ -1,28 +1,20 @@
-cff-version: 1.2.0
+cff-version: 1.1.0
 message: "If you use this software, please cite it as below."
-
-title: "Automator: Automated Imaging of Round Petri Dishes/Plates (90-100 mm)"
-
 authors:
   - family-names: R
     given-names: Rohan
     affiliation: "The Sainsbury Laboratory, Norwich"
     orcid: "https://orcid.org/0009-0005-9225-1775"
-
-version: "3.0.0"
-date-released: "2026-07-26"
-
-license: MIT
-
-repository-code: "https://github.com/rotsl/Automator"
-
+title: "Automator: Automated Imaging of Round Petri Dishes/Plates (90-100 mm)"
+version: 3.0.0
+date-released: 2026-07-26
+url: "https://github.com/rotsl/Automator"
 abstract: >
   Automator is an open-source system for real-time automated imaging,
   tracking, and analysis of round Petri dishes/plates (90-100 mm). It integrates
   motion control, camera acquisition, and scheduling on Raspberry Pi hardware
   using Klipper, Moonraker, and a custom Python-based controller and web interface.
   Hardware design files are released under CERN-OHL-S-2.0; documentation under CC-BY-4.0.
-
 keywords:
   - automated imaging
   - Petri dishes
