@@ -20,6 +20,7 @@ Current release line: **v3.0.0**
 [![PyPI Downloads](https://static.pepy.tech/personalized-badge/automator-tsl?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLUE&right_color=RED&left_text=package-downloads)](https://pepy.tech/projects/automator-tsl)
 [![Documentation](https://img.shields.io/badge/docs-Read%20the%20Docs-blue)](https://rotsl.github.io/Automator/)
 [![PyPI Package](https://img.shields.io/pypi/v/automator-tsl.svg)](https://pypi.org/project/automator-tsl/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21609180.svg)](https://doi.org/10.5281/zenodo.21609180)
 ![Automator web interface](documentation/images/AutomatorUI.png)
 
 ## Workflow (A → L)
