@@ -282,7 +282,7 @@ The standalone generator runs independently on your own laptop. Once you have pr
 
 Stick the label onto the top dish lid of the Petri dish.
 
-The top-mounted camera can read labels on the rim from above.
+The top-mounted camera reads labels placed on top of the lid from above.
 
 Common reasons detection fails:
 

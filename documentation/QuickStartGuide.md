@@ -87,7 +87,7 @@ Copyright (c) 2025–2026 Rohan R
 <li>Fill in the experiment details on the QR page (strain, media, condition, orientation).</li>
 <li>Click <strong>Add QR to List</strong> for each plate.</li>
 <li>Click <strong>Download PDF Sheet</strong>, print, and cut out the labels.</li>
-<li>Stick each label on the lid rim of the corresponding plate with the QR code facing up.</li>
+<li>Stick each label on top of the lid of the corresponding plate with the QR code facing up.</li>
 </ol>
 </td>
 </tr>
