@@ -551,6 +551,8 @@ You must:
 - Follow all TSL and institutional safety rules and risk assessments
 - Never reach into the workspace while the arm is in motion
 - Not leave the system unattended during the first imaging cycle of a new experimental setup
+- Be aware that this system opens plate lids during every imaging cycle. Confirm that lid opening is appropriate for your experimental material and compliance obligations before use.
+- Be aware that organisms subject to containment requirements — including Magnaporthe cultures under a plant health licence — must only be used with this system once it is housed in an appropriate facility (microbiological safety cabinet or negative pressure environment). The current installation in TSL PGC07 is for demonstration purposes only and is not configured for live culture use. The appropriate housing will be confirmed by the lab manager before any experimental use with cultures begins.
 
 ---
 

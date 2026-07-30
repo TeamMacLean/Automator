@@ -5,6 +5,8 @@ Copyright (c) 2025–2026 Rohan R
 
 # Quick Start Guide
 
+> **Before you begin:** This system opens plate lids during imaging. The current installation in TSL PGC07 is for demonstration purposes only and is not suitable for live culture use. Organisms subject to containment requirements — including *Magnaporthe* cultures under a plant health licence — must not be used with this system until it is relocated to an appropriate facility. Confirm suitability with your supervisor before proceeding.
+
 ---
 
 ## 1. What you need

@@ -320,6 +320,7 @@ Users are responsible for ensuring:
 - mechanical guarding
 - external emergency stop hardware
 - compliance with local safety and laboratory regulations
+- suitability of experimental material — this system opens plate lids during operation; the current installation is for demonstration purposes only; use with organisms requiring containment must wait until the system is housed in an appropriate facility as confirmed by the lab manager
 
 ## License and disclaimer
 
