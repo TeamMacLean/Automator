@@ -1684,6 +1684,15 @@ Images accumulate in `/home/pi/Automator/data/`. Export to a USB drive as descri
 
 #### Software update procedure
 
+The Raspberry Pi has two remotes configured:
+
+| Remote          | URL                                              |
+|-----------------|--------------------------------------------------|
+| `origin`        | `https://github.com/rotsl/Automator.git`         |
+| `teammaclean`   | `https://github.com/TeamMacLean/Automator.git`   |
+
+The local `main` branch tracks `teammaclean/main`. `git pull` in step 4 below pulls from `teammaclean/main` by default. To pull from the original `rotsl` repository instead, use `git pull origin main`. Always run `git status` before pulling — do not pull if there are uncommitted changes unless they have been committed, stashed, or intentionally discarded. Verify the setup with `git remote -v` and `git branch -vv`.
+
 1. Announce a maintenance window.
 2. Stop active imaging.
 3. Back up data and raw directory.

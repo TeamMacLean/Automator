@@ -1014,6 +1014,36 @@ Before resuming production imaging:
 
 ### 13.2 Firmware/software update procedure
 
+#### Git remote configuration
+
+The Raspberry Pi has two remotes configured:
+
+| Remote | URL |
+|--------|-----|
+| `origin` | `https://github.com/rotsl/Automator.git` |
+| `teammaclean` | `https://github.com/TeamMacLean/Automator.git` |
+
+The local `main` branch tracks `teammaclean/main`. Running `git pull` (step 5 below) pulls from `teammaclean/main` by default. To pull from the original `rotsl` repository instead:
+
+```bash
+git pull origin main
+```
+
+To verify the current setup:
+
+```bash
+git remote -v
+git branch -vv
+```
+
+Before pulling, always check for local changes:
+
+```bash
+git status
+```
+
+Do not pull if there are uncommitted changes unless they have been committed, stashed, or intentionally discarded.
+
 | Step | Action | Validation Method | Expected Result | Status |
 |---|---|---|---|---|
 | 1 | Announce maintenance window | Notify lab operators | No active imaging during update | ☐ Pass / ☐ Fail |
