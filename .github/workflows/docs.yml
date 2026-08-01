@@ -40,7 +40,7 @@ jobs:
           mkdir -p docs/documentation/images docs/hardware/images docs/mechanical docs/config docs/stylesheets
 
           # Root-level pages
-          cp README.md        docs/automator-project.md
+          cp README.md        docs/
           cp contributing.md docs/
           cp package.md       docs/
           cp LICENSE            docs/LICENSE.md
@@ -217,7 +217,7 @@ jobs:
                 - Security Model & Credentials: documentation/Security_Model_Credential_Management.md
             - Automator Package: package.md
             - Project:
-                - Automator TSL Project: automator-project.md
+                - Automator TSL Project: README.md
                 - Contributing: contributing.md
                 - Punchcard (Internal Documentation): https://shorturl.at/Jth2Y
                 - metrics-petri (PyPI): https://pypi.org/project/metrics-petri/
