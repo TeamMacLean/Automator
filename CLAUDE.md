@@ -8,7 +8,7 @@ Documentation, source code, and hardware design files for the **Automator** — 
 
 This clone is primarily used as the **reference documentation** for the physical instrument. The deployed, running copy of the code lives on the robot's Raspberry Pi at `/home/pi/Automator/` — changes made here do not affect the instrument unless pulled onto the Pi.
 
-**Status (August 2026):** the robot is being moved out of its home (BINDER growth chamber TSL PGC07, TSL Building Ground Floor) into temporary storage, for reassembly soon after. See `documentation/Move_Procedure.md`.
+**Status (August 2026):** the robot has been moved out of its home (BINDER growth chamber TSL PGC07, TSL Building Ground Floor) into temporary storage. The move (7 Aug 2026) required destructive cable removal — the as-built wiring did not match the documentation — so the rebuild will need re-wiring, a re-printed cradle, and full recalibration. See `documentation/Move_Incident_Record_2026-08-07.md` and `documentation/Move_Procedure.md`.
 
 ## Repository layout
 

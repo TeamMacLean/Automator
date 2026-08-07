@@ -5,6 +5,8 @@ SPDX-License-Identifier: CC-BY-4.0
 
 # Moving the Automator — shutdown, disconnection, and rebuild
 
+> **⚠️ Superseded in part — read first:** this procedure was attempted on 7 August 2026 and the umbilical could **not** be withdrawn intact — the as-built wiring (undocumented cable ties, inline splices, and knots) forced destructive removal. Wires were cut and the 3D-printed cradle was destroyed. The quick-reconnect rebuild in §5 therefore no longer applies; see [Move_Incident_Record_2026-08-07.md](Move_Incident_Record_2026-08-07.md) for the damage record and the revised rebuild requirements.
+
 This is a procedure for **relocating the Automator**, not decommissioning it. The system will be rebuilt shortly after the move, so no data archival, credential export, or component-level disassembly is needed — the goal is a clean shutdown, disconnection of the cabling that ties the gantry to the controller unit through the chamber access, and a quick reconnect at the other end.
 
 For full decommissioning, see [RunBook.md §15](RunBook.md#15-decommissioning-procedure) instead.
