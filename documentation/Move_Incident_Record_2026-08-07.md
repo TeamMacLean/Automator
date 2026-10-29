@@ -41,7 +41,7 @@ Photos of the as-found wiring and the cut points should be added to the lab file
 
 ## 3. Consequences for the rebuild
 
-The "reconnect and verify" rebuild in Move_Procedure.md §5 **no longer applies**. The rebuild is now a partial re-wiring job:
+The "reconnect and verify" rebuild in Move_Procedure.md §5 **no longer applies**. The rebuild is now a partial re-wiring job. A brief for the electronics workshop, listing the contradictions between the existing documents and the questions that must be answered from the parts, is in [document_brief.md](document_brief.md).
 
 1. **Re-terminate every cut wire** with proper connectors (JST/XH, spade, or screw-terminal as appropriate — see the connector types on the MKS board and GPIO breakout in `hardware/Hardware_Documentation.md` §8). Replace, don't repair, any cable that had a bodged splice or knot mid-run; suitable replacement cables are itemised in `documentation/Bill_of_Materials.md` §9.
 2. **Re-print the destroyed cradle** from the STLs in `mechanical/`.

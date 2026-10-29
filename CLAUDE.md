@@ -31,6 +31,7 @@ This clone is primarily used as the **reference documentation** for the physical
 | How do users run an imaging session? | `documentation/HowToUseAutomator.md`, `documentation/QuickStartGuide.md` |
 | Operations, safety, emergencies, decommissioning | `documentation/RunBook.md` |
 | How to move the robot to another location | `documentation/Move_Procedure.md` |
+| Summary for the electronics workshop ahead of re-wiring (which sources to trust, contradictions between the docs, open questions) | `documentation/document_brief.md` |
 | What did it cost / what parts are in it? | `documentation/Bill_of_Materials.md` |
 | 3D-printed parts and assembly photos | `mechanical/mechanical_guide.md` |
 | Physical buttons, buzzer, systemd services | `documentation/HARDWARE_BUTTONS_AND_SERVICES.md` |
