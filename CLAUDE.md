@@ -33,6 +33,7 @@ This clone is primarily used as the **reference documentation** for the physical
 | How to move the robot to another location | `documentation/Move_Procedure.md` |
 | Summary for the electronics workshop ahead of re-wiring (which sources to trust, contradictions between the docs, open questions) | `documentation/document_brief.md` |
 | What did it cost / what parts are in it? | `documentation/Bill_of_Materials.md` |
+| What was actually bought through TSL purchasing, with request IDs and ASINs? | `documentation/Purchase_Records.md` (the MKS board, pump, servo, buck converter and switch modules were never bought via TSL) |
 | 3D-printed parts and assembly photos | `mechanical/mechanical_guide.md` |
 | Physical buttons, buzzer, systemd services | `documentation/HARDWARE_BUTTONS_AND_SERVICES.md` |
 | Networking (MacBook direct Ethernet, kiosk mode) | `documentation/Raspberry_Pi_Direct_Ethernet_Access_from_MacBook_UPDATED.md`, `documentation/raspberry-pi-automator-kiosk-admin-desktop.md`, `documentation/networkandprintsettings.md` |
